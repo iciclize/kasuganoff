@@ -9,7 +9,7 @@ var SHARE_MESSAGE = 'phina.js でブロック崩しを作ろう!!\nSCORE:{score}
 var SHARE_HASH_TAGS = 'breakout,phina_js';
 
 var SCREEN_WIDTH    = 720;  
-var SCREEN_HEIGHT   = 1280;  
+var SCREEN_HEIGHT   = 1040;  
 var MAX_PER_LINE    = 8;  
 var BLOCK_NUM       = MAX_PER_LINE*5;  
 var BLOCK_SIZE      = 64;  
@@ -152,6 +152,7 @@ phina.define('Ganoff', {
       this.move();
       this.wallReflection();
     }, this);
+    this.speed -= this._static.brakeFn(this.speed);
   },
 
   wallReflection: function() {
@@ -177,8 +178,14 @@ phina.define('Ganoff', {
   },
 
   setVector: function(vector) {
-    this.speed = vector.length();
+    this.speed = vector.length() * 1.2;
     this.direction = vector.normalize();
+  },
+
+  _static: {
+    brakeFn: function(speed) {
+      return .003 * speed + .01;
+    }
   }
 
 });
@@ -249,7 +256,7 @@ phina.main(function() {
     assets: ASSETS
   });
 
-  app.fps = 60;
+  app.fps = 50;
 
   app.enableStats();
 
