@@ -177,7 +177,7 @@ phina.define('Ganoff', {
   },
 
   setVector: function(vector) {
-    this.speed = vector.length() / 10;
+    this.speed = vector.length();
     this.direction = vector.normalize();
   }
 
