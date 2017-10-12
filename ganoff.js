@@ -89,8 +89,8 @@ phina.define("MainScene", {
     
     if (pointer.getPointingEnd()) {
         this.label.text = pointer.flickVelocity.toAngle().toDegree().floor();
-        this.ganoff.vx = pointer.fx;
-        this.ganoff.vy = pointer.fy;
+        let input = Vector2(pointer.fx, pointer.fy);
+        this.ganoff.setVector(input);
     }
   },
 
@@ -137,30 +137,50 @@ phina.define("MainScene", {
 });
 
 phina.define('Ganoff', {
-  superClass: 'RectangleShape',
+  superClass: 'Sprite',
   init: function() {
-    this.superInit({
-      width: 496 * .25,
-      height: 254 * .25
-    });
+    this.superInit('ganoff', 496 * .25, 254 * .25);
+    this.width = 496 * .25;
+    this.height = 254 * .25;
+    this.setPosition(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2);
+    this.speed = 0;
+    this.direction = Vector2(0, 1).normalize();
+  },
 
-    let sprite = Sprite('ganoff', 496 * .25, 254 * .25).addChildTo(this);
-    sprite.setPosition(0, 0);
-    sprite.vx = sprite.vy = 0;
-    sprite.update = function() {
-      this.vx *= 0.9;
-      this.vy *= 0.9;
-      this.x += this.vx;
-      this.y += this.vy;
-      console.log('x:', this.x, 'y:', this.y);
-      if (this.left < 0) { this.left = 0; this.vx *= -1; }
-      else if (this.right > 640) { this.right = 640; this.vx *= -1; }
-      if (this.top < 0) { this.top = 0; this.vy *= -1; }
-      else if (this.bottom > 960) { this.bottom = 960; this.vy *= -1; }
-    };
+  update: function() {
+    (this.speed).times(function() {
+      this.move();
+      this.wallReflection();
+    }, this);
+  },
 
-    // TODO: クラス定義の方法
+  wallReflection: function() {
+    if (this.left < 0) {
+      this.left = 0;
+      this.direction.x *= -1;
+    } else if (this.right > SCREEN_WIDTH) {
+      this.right = SCREEN_WIDTH;
+      this.direction.x *= -1;
+    }
+    if (this.top < 0) {
+      this.top = 0;
+      this.direction.y *= -1;
+    } else if (this.bottom > SCREEN_HEIGHT) {
+      this.bottom = SCREEN_HEIGHT;
+      this.direction.y *= -1;
+    }
+  },
+
+  move: function() {
+    this.x += this.direction.x;
+    this.y += this.direction.y;
+  },
+
+  setVector: function(vector) {
+    this.speed = vector.length() / 10;
+    this.direction = vector.normalize();
   }
+
 });
 
 /*
