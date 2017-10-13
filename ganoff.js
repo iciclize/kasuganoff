@@ -11,17 +11,18 @@ var SHARE_HASH_TAGS = 'breakout,phina_js';
 var SCREEN_WIDTH    = 810;  
 var SCREEN_HEIGHT   = 1145;  
 var MAX_PER_LINE    = 8;  
-var BLOCK_NUM       = MAX_PER_LINE*5;  
-var BLOCK_SIZE      = 64;  
+var BIKE_NUM       = MAX_PER_LINE*5;  
+var BIKE_SIZE      = 64;  
 var BOARD_PADDING   = 50;
 
 var BOARD_SIZE      = SCREEN_WIDTH - BOARD_PADDING*2;  
-var BOARD_OFFSET_X  = BOARD_PADDING+BLOCK_SIZE/2;  
+var BOARD_OFFSET_X  = BOARD_PADDING+BIKE_SIZE/2;  
 var BOARD_OFFSET_Y  = 150;
 
 const ASSETS = {
   image: {
-    "ganoff": "./assets/ganoff.png"
+    "ganoff": "./assets/ganoff.png",
+    "bike": "./assets/bike.png"
   }
 };
 
@@ -45,12 +46,12 @@ phina.define("MainScene", {
 
     var self = this;
 
-    (BLOCK_NUM).times(function(i) {
+    (BIKE_NUM).times(function(i) {
       // グリッド上でのインデックス
       var xIndex = i%MAX_PER_LINE;
       var yIndex = Math.floor(i/MAX_PER_LINE);
-      var angle = (360)/BLOCK_NUM*i;
-      var block = Block(angle).addChildTo(this.group).setPosition(100, 100);
+      var angle = (360)/BIKE_NUM*i;
+      var block = Bike(angle).addChildTo(this.group).setPosition(100, 100);
 
       block.x = gridX.span(xIndex) + BOARD_OFFSET_X;
       block.y = gridY.span(yIndex)+BOARD_OFFSET_Y;
@@ -193,18 +194,15 @@ phina.define('Ganoff', {
 /*
  * ブロック
  */
-phina.define('Block', {  
-  superClass: 'RectangleShape',
+phina.define('Bike', {  
+  superClass: 'Sprite',
 
-  init: function(angle) {
-    this.superInit({
-      width: BLOCK_SIZE,
-      height: BLOCK_SIZE,
-      fill: 'hsl({0}, 80%, 60%)'.format(angle || 0),
-      stroke: null,
-      cornerRadius: 8,
-    });
-  },
+  init: function() {
+    this.superInit('bike', 500 * .25, 500 * .25);
+    this.width = BIKE_SIZE;
+    this.height = BIKE_SIZE;
+  }
+
 });
 
 /*
