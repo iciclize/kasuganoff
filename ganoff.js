@@ -8,8 +8,8 @@ var SHARE_URL = 'http://phiary.me/phina-js-breakout/';
 var SHARE_MESSAGE = 'phina.js でブロック崩しを作ろう!!\nSCORE:{score}';  
 var SHARE_HASH_TAGS = 'breakout,phina_js';
 
-var SCREEN_WIDTH    = 720;  
-var SCREEN_HEIGHT   = 1040;  
+var SCREEN_WIDTH    = 810;  
+var SCREEN_HEIGHT   = 1145;  
 var MAX_PER_LINE    = 8;  
 var BLOCK_NUM       = MAX_PER_LINE*5;  
 var BLOCK_SIZE      = 64;  
