@@ -8,16 +8,16 @@ var SHARE_URL = 'http://phiary.me/phina-js-breakout/';
 var SHARE_MESSAGE = 'phina.js でブロック崩しを作ろう!!\nSCORE:{score}';  
 var SHARE_HASH_TAGS = 'breakout,phina_js';
 
-var SCREEN_WIDTH    = 810;  
-var SCREEN_HEIGHT   = 1145;  
-var MAX_PER_LINE    = 8;  
-var BIKE_NUM       = MAX_PER_LINE*5;  
-var BIKE_SIZE      = 64;  
-var BOARD_PADDING   = 50;
+var SCREEN_WIDTH    = 514;  
+var SCREEN_HEIGHT   = 893;  
+var MAX_PER_LINE    = 7;  
+var BIKE_SIZE      = 92;  
+var BIKE_NUM       = MAX_PER_LINE * Math.ceil(SCREEN_HEIGHT / BIKE_SIZE);  
+var BOARD_PADDING   = 30;
 
 var BOARD_SIZE      = SCREEN_WIDTH - BOARD_PADDING*2;  
 var BOARD_OFFSET_X  = BOARD_PADDING+BIKE_SIZE/2;  
-var BOARD_OFFSET_Y  = 150;
+var BOARD_OFFSET_Y  = 120;
 
 const ASSETS = {
   image: {
@@ -36,10 +36,10 @@ phina.define("MainScene", {
     this.scoreLabel = Label('0').addChildTo(this);
     this.scoreLabel.x = this.gridX.center();
     this.scoreLabel.y = this.gridY.span(1);
-    this.scoreLabel.fill = 'white';
+    this.scoreLabel.fill = 'black';
 
     // グループ
-    this.group = DisplayElement().addChildTo(this);
+    this.bikes = DisplayElement().addChildTo(this);
 
     var gridX = Grid(BOARD_SIZE, MAX_PER_LINE);
     var gridY = Grid(BOARD_SIZE, MAX_PER_LINE);
@@ -51,10 +51,10 @@ phina.define("MainScene", {
       var xIndex = i%MAX_PER_LINE;
       var yIndex = Math.floor(i/MAX_PER_LINE);
       var angle = (360)/BIKE_NUM*i;
-      var block = Bike(angle).addChildTo(this.group).setPosition(100, 100);
+      var bike = Bike(angle).addChildTo(this.bikes).setPosition(100, 100);
 
-      block.x = gridX.span(xIndex) + BOARD_OFFSET_X;
-      block.y = gridY.span(yIndex)+BOARD_OFFSET_Y;
+      bike.x = gridX.span(xIndex) + BOARD_OFFSET_X;
+      bike.y = gridY.span(yIndex)+BOARD_OFFSET_Y;
     }, this);
 
     // タッチでゲーム開始
@@ -75,28 +75,48 @@ phina.define("MainScene", {
 
     let ganoff = Ganoff().addChildTo(this);
     this.ganoff = ganoff;
+
+    this.explosionManager = ExplosionManager(this);
   },
 
   update: function(app) {
+
+    this.explosionManager.update();
+
     // タイムを加算
     this.time += app.deltaTime;
 
     // ブロックがすべてなくなったらクリア
-    if (this.group.children.length <= 0) {
+    if (this.bikes.children.length <= 0) {
       this.gameclear();
     }
 
     var pointer = app.pointer;
     
     if (pointer.getPointingEnd()) {
-        this.label.text = pointer.flickVelocity.toAngle().toDegree().floor();
-        let input = Vector2(pointer.fx, pointer.fy);
-        this.ganoff.setVector(input);
+      this.label.text = pointer.flickVelocity.toAngle().toDegree().floor();
+      let input = Vector2(pointer.fx, pointer.fy);
+      this.ganoff.setVector(input);
     }
+
+    if (pointer.getPointingStart()) {
+      this.explosionManager.fire(app.pointer.x, app.pointer.y);
+    }
+
+    this.bikes.children.each(function(bike) {
+      if (this.ganoff.hitTestElement(bike)) {
+        if (!bike.broken) {
+          bike.broken = true;
+          this.explosionManager.fire(bike.x, bike.y);
+          bike.remove();
+        }
+      }
+    }, this);
+
   },
 
   checkHit: function() {
-    this.group.children.some(function(block) {
+    this.bikes.children.some(function(bike) {
         return true;
     }, this);
   },
@@ -140,9 +160,9 @@ phina.define("MainScene", {
 phina.define('Ganoff', {
   superClass: 'Sprite',
   init: function() {
-    this.superInit('ganoff', 496 * .25, 254 * .25);
-    this.width = 496 * .25;
-    this.height = 254 * .25;
+    this.superInit('ganoff', 500, 500);
+    this.width = 496 * .17;
+    this.height = 254 * .17;
     this.setPosition(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2);
     this.speed = 0;
     this.direction = Vector2(0, 1).normalize();
@@ -198,9 +218,10 @@ phina.define('Bike', {
   superClass: 'Sprite',
 
   init: function() {
-    this.superInit('bike', 500 * .25, 500 * .25);
-    this.width = BIKE_SIZE;
-    this.height = BIKE_SIZE;
+    this.superInit('bike', 500, 500);
+    this.width = BIKE_SIZE -5;
+    this.height = BIKE_SIZE -5;
+    this.broken = false;
   }
 
 });
@@ -213,7 +234,7 @@ phina.define('ComboLabel', {
   init: function(num) {
     this.superInit(num + ' combo!');
 
-    this.stroke = 'white';
+    this.stroke = 'black';
     this.strokeWidth = 8;
 
     // 数によって色とサイズを分岐
@@ -243,6 +264,94 @@ phina.define('ComboLabel', {
   },
 });
 
+phina.define('ExplosionManager', {
+  init: function(display) {
+    this.explosions = [];
+    this.display = display;
+  },
+
+  fire: function(x, y) {
+    this.explosions.push(Explosion(x, y, this.display));
+  },
+
+  update: function() {
+    this.explosions = this.explosions.filter(function(e) {
+      return e.update();
+    });
+  }
+
+});
+
+var PARTICLE_NUM = 10;
+phina.define('Explosion', {
+
+  init: function(x, y, display) {
+    this.particles = DisplayElement().addChildTo(display);
+    this.x = x;
+    this.y = y;
+    this.emitted = 0;
+  },
+
+  update: function() {
+    if (this.emitted >= PARTICLE_NUM && this.particles.children.length <= 0)
+      return false;
+
+    var emit = Math.min(2, PARTICLE_NUM - this.emitted);
+
+    (emit).times(function() {
+      var p = Particle(this.x, this.y);
+      p.on('disappear', p.remove);
+      p.addChildTo(this.particles);
+    }, this);
+    this.emitted += emit;
+    
+    return true;
+  }
+
+});
+
+var PARTICLE_HUE_RANGE_BEGIN  = 0;
+var PARTICLE_HUE_RANGE_END    = 30;
+var PARTICLE_VELOCITY_RANGE   = 14;
+var PARTICLE_RADIUS           = 42;
+var PARTICLE_NOIZE_RANGE      = 18;
+
+phina.define('Particle', {  
+  superClass: 'CircleShape',
+
+  init: function(x, y) {
+    this.superInit({
+      stroke: false,
+      radius: PARTICLE_RADIUS,
+    });
+
+    this.blendMode = 'lighter';
+    this.fill = (function() {
+      var g = this.canvas.context.createRadialGradient(0, 0, 0, 0, 0, this.radius);
+      g.addColorStop(0, 'hsla({0}, 75%, 50%, 1.0)'.format(Math.randint(PARTICLE_HUE_RANGE_BEGIN, PARTICLE_HUE_RANGE_END)));
+      g.addColorStop(1, 'hsla({0}, 75%, 50%, 0.0)'.format(Math.randint(PARTICLE_HUE_RANGE_BEGIN, PARTICLE_HUE_RANGE_END)));
+      return g;
+    }).call(this);
+
+    this.velocity = Vector2();
+    this.x = Math.randint(x - PARTICLE_NOIZE_RANGE, x + PARTICLE_NOIZE_RANGE);
+    this.y = Math.randint(y - PARTICLE_NOIZE_RANGE, y + PARTICLE_NOIZE_RANGE);
+    this.velocity = Vector2.random(0, 360, Math.randfloat(0, PARTICLE_VELOCITY_RANGE));
+  },
+
+  update: function() {
+    this.position.add(this.velocity);
+    // this.velocity = this.velocity.fromDegree(this.velocity.toDegree(), this.velocity.length() * 1);
+    this.scaleX -= .1;
+    this.scaleY -= .1;
+
+    if (this.scaleX < 0) {
+      this.flare('disappear');
+    }
+  }
+});
+
+
 
 phina.main(function() {  
   var app = GameApp({
@@ -250,11 +359,10 @@ phina.main(function() {
     startLabel: location.search.substr(1).toObject().scene || 'title',
     width: SCREEN_WIDTH,
     height: SCREEN_HEIGHT,
-    backgroundColor: '#444',
     assets: ASSETS
   });
 
-  app.fps = 50;
+  app.fps = 30;
 
   app.enableStats();
 
