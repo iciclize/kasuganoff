@@ -13,7 +13,7 @@ var SCREEN_HEIGHT   = 893;
 var MAX_PER_LINE    = 7;  
 var BIKE_SIZE      = 92;  
 var BIKE_NUM       = MAX_PER_LINE * Math.ceil(SCREEN_HEIGHT / BIKE_SIZE);  
-var BOARD_PADDING   = 30;
+var BOARD_PADDING   = 10;
 
 var BOARD_SIZE      = SCREEN_WIDTH - BOARD_PADDING*2;  
 var BOARD_OFFSET_X  = BOARD_PADDING+BIKE_SIZE/2;  
@@ -313,7 +313,7 @@ phina.define('Explosion', {
 var PARTICLE_HUE_RANGE_BEGIN  = 0;
 var PARTICLE_HUE_RANGE_END    = 30;
 var PARTICLE_VELOCITY_RANGE   = 14;
-var PARTICLE_RADIUS           = 42;
+var PARTICLE_RADIUS           = 28;
 var PARTICLE_NOIZE_RANGE      = 18;
 
 phina.define('Particle', {  
@@ -326,6 +326,7 @@ phina.define('Particle', {
     });
 
     this.blendMode = 'lighter';
+    this.hue = Math.randint(PARTICLE_HUE_RANGE_BEGIN, PARTICLE_HUE_RANGE_END);
     this.fill = (function() {
       var g = this.canvas.context.createRadialGradient(0, 0, 0, 0, 0, this.radius);
       g.addColorStop(0, 'hsla({0}, 75%, 50%, 1.0)'.format(Math.randint(PARTICLE_HUE_RANGE_BEGIN, PARTICLE_HUE_RANGE_END)));
@@ -337,13 +338,25 @@ phina.define('Particle', {
     this.x = Math.randint(x - PARTICLE_NOIZE_RANGE, x + PARTICLE_NOIZE_RANGE);
     this.y = Math.randint(y - PARTICLE_NOIZE_RANGE, y + PARTICLE_NOIZE_RANGE);
     this.velocity = Vector2.random(0, 360, Math.randfloat(0, PARTICLE_VELOCITY_RANGE));
+    this.scaleX = 1.4;
+    this.scaleY = 1.4;
+    this.a = 0;
   },
 
   update: function() {
+    this.a += .04;
     this.position.add(this.velocity);
-    // this.velocity = this.velocity.fromDegree(this.velocity.toDegree(), this.velocity.length() * 1);
-    this.scaleX -= .1;
-    this.scaleY -= .1;
+    this.velocity = this.velocity.fromDegree(this.velocity.toDegree(), this.velocity.length() * .8);
+    this.scaleX -= this.a;
+    this.scaleY -= this.a;
+    if (this.scaleX <= 1.16) {
+    this.fill = (function() {
+        var g = this.canvas.context.createRadialGradient(0, 0, 0, 0, 0, this.radius);
+        g.addColorStop(0, 'hsla({0}, {1}%, {2}%, 1.0)'.format(this.hue, 40 * this.scaleX, 30 * this.scaleX));
+        g.addColorStop(1, 'hsla({0}, {1}%, {2}%, 0.0)'.format(this.hue, 40 * this.scaleX, 30 * this.scaleX));
+        return g;
+      }).call(this);
+    }
 
     if (this.scaleX < 0) {
       this.flare('disappear');
