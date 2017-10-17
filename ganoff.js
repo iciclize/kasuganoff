@@ -11,12 +11,11 @@ var SHARE_HASH_TAGS = 'breakout,phina_js';
 var SCREEN_WIDTH    = 514;  
 var SCREEN_HEIGHT   = 893;  
 var MAX_PER_LINE    = 7;  
-var BIKE_SIZE       = 92;  
-var BIKE_NUM        = MAX_PER_LINE * Math.ceil(SCREEN_HEIGHT / BIKE_SIZE);  
+var OBJECT_SIZE       = 92;  
 var BOARD_PADDING   = 10;
-
-var BOARD_SIZE      = SCREEN_WIDTH - BOARD_PADDING*2;  
-var BOARD_OFFSET_X  = BOARD_PADDING+BIKE_SIZE/2;  
+var BOARD_WIDTH     = SCREEN_WIDTH - BOARD_PADDING*2;  
+var BOARD_HEIGHT    = SCREEN_HEIGHT - BOARD_PADDING*2;
+var BOARD_OFFSET_X  = BOARD_PADDING+OBJECT_SIZE/2;  
 var BOARD_OFFSET_Y  = 120;
 
 const ASSETS = {
@@ -38,22 +37,22 @@ phina.define("MainScene", {
     this.scoreLabel.y = this.gridY.span(1);
     this.scoreLabel.fill = 'black';
 
-    // グループ
+    this.board = {
+      gridX: Grid({
+        width: BOARD_WIDTH,
+        columns: Math.ceil(BOARD_WIDTH / OBJECT_SIZE) + 1,
+      }),
+      gridY: Grid({
+        width: BOARD_HEIGHT - BOARD_OFFSET_Y,
+        columns: Math.ceil(BOARD_HEIGHT / OBJECT_SIZE),
+      })
+    };
+
+
+    this.map = Array.apply(null, Array(this.board.gridY.columns * this.board.gridX.columns)).map(function(){ return MAP_BLANK });
+
     this.bikes = DisplayElement().addChildTo(this);
-
-    var gridX = Grid(BOARD_SIZE, MAX_PER_LINE);
-    var gridY = Grid(BOARD_SIZE, MAX_PER_LINE);
-
-    (BIKE_NUM).times(function(i) {
-      // グリッド上でのインデックス
-      var xIndex = i%MAX_PER_LINE;
-      var yIndex = Math.floor(i/MAX_PER_LINE);
-      var angle = (360)/BIKE_NUM*i;
-      var bike = Bike(angle).addChildTo(this.bikes).setPosition(100, 100);
-
-      bike.x = gridX.span(xIndex) + BOARD_OFFSET_X;
-      bike.y = gridY.span(yIndex)+BOARD_OFFSET_Y;
-    }, this);
+    this.objectEmitter = ObjectEmitter(this);
 
     // タッチでゲーム開始
     this.one('pointend', function() {
@@ -77,14 +76,17 @@ phina.define("MainScene", {
   update: function(app) {
 
     this.explosionManager.update();
+    this.objectEmitter.update();
 
     // タイムを加算
     this.time += app.deltaTime;
 
     // ブロックがすべてなくなったらクリア
+    /*
     if (this.bikes.children.length <= 0) {
       this.gameclear();
     }
+    */
 
     var pointer = app.pointer;
     
@@ -104,6 +106,7 @@ phina.define("MainScene", {
           bike.broken = true;
           this.explosionManager.fire(bike.x, bike.y);
           bike.remove();
+          console.log(bike.index);
         }
       }
     }, this);
@@ -162,23 +165,22 @@ var MAP_BEEF  = 5;
 phina.define('ObjectEmitter', {
   
   init: function(app) {
-    var gridX = Grid(BOARD_SIZE, MAX_PER_LINE);
-    var gridY = Grid(BOARD_SIZE, MAX_PER_LINE);
-
-    (BIKE_NUM).times(function(i) {
-      // グリッド上でのインデックス
-      var xIndex = i%MAX_PER_LINE;
-      var yIndex = Math.floor(i/MAX_PER_LINE);
-      var angle = (360)/BIKE_NUM*i;
-      var bike = Bike().addChildTo(app.bikes).setPosition(100, 100);
-
-      bike.x = gridX.span(xIndex) + BOARD_OFFSET_X;
-      bike.y = gridY.span(yIndex)+BOARD_OFFSET_Y;
-    }, this);
+    this.app = app;
+    this.counter = 0;
+    app.map.map(function(type, i) {
+      return MAP_BLANK;
+    });
     
   },
 
   update: function() {
+    var app = this.app;
+    app.map.forEach(function(type, i) {
+      if (app.map[i] == MAP_BLANK) {
+        app.map[i] = MAP_BIKE;
+        Bike(app, i).addChildTo(app.bikes);
+      }
+    });
   }
 
 });
@@ -237,24 +239,49 @@ phina.define('Ganoff', {
 
 });
 
-/*
- * 自転車
- */
-phina.define('Bike', {  
+phina.define('GameObject', {
   superClass: 'Sprite',
 
-  init: function() {
-    this.superInit('bike', 500, 500);
-    this.width = BIKE_SIZE -5;
-    this.height = BIKE_SIZE -5;
+  init: function(app, index, type, sprite) {
+    this.superInit(sprite, 500, 500);
+    this.index = index;
+    this.type = type;
+    this.width = OBJECT_SIZE - 5;
+    this.height = OBJECT_SIZE - 5;
+    this.x = app.board.gridX.span(index % app.board.gridX.columns) + BOARD_OFFSET_X;
+    this.y = app.board.gridY.span(Math.floor(index / app.board.gridX.columns)) + BOARD_OFFSET_Y;
+  }
+});
+
+phina.define('Bike', {  
+  superClass: 'GameObject',
+
+  init: function(app, index) {
+    this.superInit(app, index, MAP_BIKE, 'bike');
     this.broken = false;
   }
 
 });
 
-/*
- * コンボラベル
- */
+phina.define('Beef', {
+  superClass: 'GameObject',
+  init: function(app, index) {
+    this.superInit(app, index, MAP_BEEF, 'beef');
+  }
+});
+phina.define('Bomb', {
+  superClass: 'GameObject',
+  init: function(app, index) {
+    this.superInit(app, index, MAP_BOMB, 'bomb');
+  }
+});
+phina.define('Bread', {
+  superClass: 'GameObject',
+  init: function(app, index) {
+    this.superInit(app, index, MAP_BREAD, 'bread');
+  }
+});
+
 phina.define('ComboLabel', {  
   superClass: 'Label',
   init: function(num) {
@@ -297,7 +324,8 @@ phina.define('ExplosionManager', {
   },
 
   fire: function(x, y) {
-    this.explosions.push(Explosion(x, y, this.display));
+    var explosion = Explosion(x, y, this.display);
+    this.explosions.push(explosion);
   },
 
   update: function() {
@@ -319,14 +347,14 @@ phina.define('Explosion', {
   },
 
   update: function() {
-    if (this.emitted >= PARTICLE_NUM && this.particles.children.length <= 0)
+    if (this.emitted >= PARTICLE_NUM && this.particles.children.length <= 0) {
+      // this.flare('disappear');
       return false;
+    }
 
     var emit = Math.min(2, PARTICLE_NUM - this.emitted);
-
     (emit).times(function() {
       var p = Particle(this.x, this.y);
-      p.on('disappear', p.remove);
       p.addChildTo(this.particles);
     }, this);
     this.emitted += emit;
@@ -375,13 +403,12 @@ phina.define('Particle', {
 
     this.blendMode = 'lighter';
     this.fill = this.gradients[0];
-
     this.velocity = Vector2();
     this.x = Math.randint(x - PARTICLE_NOIZE_RANGE, x + PARTICLE_NOIZE_RANGE);
     this.y = Math.randint(y - PARTICLE_NOIZE_RANGE, y + PARTICLE_NOIZE_RANGE);
     this.velocity = Vector2.random(0, 360, Math.randfloat(0, PARTICLE_VELOCITY_RANGE));
-    this.scaleX = 3.5;
-    this.scaleY = 3.5;
+    this.scaleX = 3.2;
+    this.scaleY = 3.2;
     this.a = 0;
   },
 
@@ -401,7 +428,7 @@ phina.define('Particle', {
     }
 
     if (this.scaleX < 0) {
-      this.flare('disappear');
+      this.remove();
     }
   },
 
