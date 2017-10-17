@@ -11,8 +11,8 @@ var SHARE_HASH_TAGS = 'breakout,phina_js';
 var SCREEN_WIDTH    = 514;  
 var SCREEN_HEIGHT   = 893;  
 var MAX_PER_LINE    = 7;  
-var BIKE_SIZE      = 92;  
-var BIKE_NUM       = MAX_PER_LINE * Math.ceil(SCREEN_HEIGHT / BIKE_SIZE);  
+var BIKE_SIZE       = 92;  
+var BIKE_NUM        = MAX_PER_LINE * Math.ceil(SCREEN_HEIGHT / BIKE_SIZE);  
 var BOARD_PADDING   = 10;
 
 var BOARD_SIZE      = SCREEN_WIDTH - BOARD_PADDING*2;  
@@ -44,8 +44,6 @@ phina.define("MainScene", {
     var gridX = Grid(BOARD_SIZE, MAX_PER_LINE);
     var gridY = Grid(BOARD_SIZE, MAX_PER_LINE);
 
-    var self = this;
-
     (BIKE_NUM).times(function(i) {
       // グリッド上でのインデックス
       var xIndex = i%MAX_PER_LINE;
@@ -62,11 +60,8 @@ phina.define("MainScene", {
 
     });
 
-    // スコア
     this.score = 0;
-    // 時間
     this.time = 0;
-    // コンボ
     this.combo = 0;
     
     var label = phina.display.Label(320).addChildTo(this);
@@ -157,6 +152,37 @@ phina.define("MainScene", {
 
 });
 
+
+var MAP_BLANK = 0;
+var MAP_CRASH = 1;
+var MAP_BIKE  = 2;
+var MAP_BOMB  = 3;
+var MAP_BREAD = 4;
+var MAP_BEEF  = 5;
+phina.define('ObjectEmitter', {
+  
+  init: function(app) {
+    var gridX = Grid(BOARD_SIZE, MAX_PER_LINE);
+    var gridY = Grid(BOARD_SIZE, MAX_PER_LINE);
+
+    (BIKE_NUM).times(function(i) {
+      // グリッド上でのインデックス
+      var xIndex = i%MAX_PER_LINE;
+      var yIndex = Math.floor(i/MAX_PER_LINE);
+      var angle = (360)/BIKE_NUM*i;
+      var bike = Bike().addChildTo(app.bikes).setPosition(100, 100);
+
+      bike.x = gridX.span(xIndex) + BOARD_OFFSET_X;
+      bike.y = gridY.span(yIndex)+BOARD_OFFSET_Y;
+    }, this);
+    
+  },
+
+  update: function() {
+  }
+
+});
+
 phina.define('Ganoff', {
   superClass: 'Sprite',
   init: function() {
@@ -212,7 +238,7 @@ phina.define('Ganoff', {
 });
 
 /*
- * ブロック
+ * 自転車
  */
 phina.define('Bike', {  
   superClass: 'Sprite',
@@ -313,8 +339,8 @@ phina.define('Explosion', {
 var PARTICLE_HUE_RANGE_BEGIN  = 0;
 var PARTICLE_HUE_RANGE_END    = 30;
 var PARTICLE_VELOCITY_RANGE   = 14;
-var PARTICLE_RADIUS           = 28;
-var PARTICLE_NOIZE_RANGE      = 18;
+var PARTICLE_RADIUS           = 12;
+var PARTICLE_NOIZE_RANGE      = 4;
 
 phina.define('Particle', {  
   superClass: 'CircleShape',
@@ -325,43 +351,60 @@ phina.define('Particle', {
       radius: PARTICLE_RADIUS,
     });
 
-    this.blendMode = 'lighter';
     this.hue = Math.randint(PARTICLE_HUE_RANGE_BEGIN, PARTICLE_HUE_RANGE_END);
-    this.fill = (function() {
-      var g = this.canvas.context.createRadialGradient(0, 0, 0, 0, 0, this.radius);
-      g.addColorStop(0, 'hsla({0}, 75%, 50%, 1.0)'.format(Math.randint(PARTICLE_HUE_RANGE_BEGIN, PARTICLE_HUE_RANGE_END)));
-      g.addColorStop(1, 'hsla({0}, 75%, 50%, 0.0)'.format(Math.randint(PARTICLE_HUE_RANGE_BEGIN, PARTICLE_HUE_RANGE_END)));
-      return g;
+    
+    this.gradients = (function() {
+      var _gradients = [];
+
+      var fire = this.canvas.context.createRadialGradient(0, 0, 0, 0, 0, this.radius);
+      fire.addColorStop(0, 'hsla({0}, 75%, 50%, 1.0)'.format(Math.randint(PARTICLE_HUE_RANGE_BEGIN, PARTICLE_HUE_RANGE_END)));
+      fire.addColorStop(1, 'hsla({0}, 75%, 50%, 0.0)'.format(Math.randint(PARTICLE_HUE_RANGE_BEGIN, PARTICLE_HUE_RANGE_END)));
+      
+      var ash1 = this.canvas.context.createRadialGradient(0, 0, 0, 0, 0, this.radius);
+      ash1.addColorStop(0, 'hsla({0}, {1}%, {2}%, 1.0)'.format(this.hue, 20, 30) );
+      ash1.addColorStop(1, 'hsla({0}, {1}%, {2}%, 0.0)'.format(this.hue, 20, 30) );
+
+      var ash2 = this.canvas.context.createRadialGradient(0, 0, 0, 0, 0, this.radius);
+      ash2.addColorStop(0, 'hsla({0}, {1}%, {2}%, 1.0)'.format(this.hue, 0, 0) );
+      ash2.addColorStop(1, 'hsla({0}, {1}%, {2}%, 0.0)'.format(this.hue, 0, 0) );
+      
+      _gradients.push(fire, ash1, ash2);
+
+      return _gradients;
     }).call(this);
+
+    this.blendMode = 'lighter';
+    this.fill = this.gradients[0];
 
     this.velocity = Vector2();
     this.x = Math.randint(x - PARTICLE_NOIZE_RANGE, x + PARTICLE_NOIZE_RANGE);
     this.y = Math.randint(y - PARTICLE_NOIZE_RANGE, y + PARTICLE_NOIZE_RANGE);
     this.velocity = Vector2.random(0, 360, Math.randfloat(0, PARTICLE_VELOCITY_RANGE));
-    this.scaleX = 1.4;
-    this.scaleY = 1.4;
+    this.scaleX = 3.5;
+    this.scaleY = 3.5;
     this.a = 0;
   },
 
   update: function() {
-    this.a += .04;
+    this.a += .06;
     this.position.add(this.velocity);
     this.velocity = this.velocity.fromDegree(this.velocity.toDegree(), this.velocity.length() * .8);
     this.scaleX -= this.a;
     this.scaleY -= this.a;
-    if (this.scaleX <= 1.16) {
-    this.fill = (function() {
-        var g = this.canvas.context.createRadialGradient(0, 0, 0, 0, 0, this.radius);
-        g.addColorStop(0, 'hsla({0}, {1}%, {2}%, 1.0)'.format(this.hue, 40 * this.scaleX, 30 * this.scaleX));
-        g.addColorStop(1, 'hsla({0}, {1}%, {2}%, 0.0)'.format(this.hue, 40 * this.scaleX, 30 * this.scaleX));
-        return g;
-      }).call(this);
+
+    if (this.scaleX <= 2.0) {
+      if (this.fill != this.gradients[2])
+        this.fill = this.gradients[2];
+    } else if (this.scaleX <= 2.9) {
+      if (this.fill != this.gradients[1])
+        this.fill = this.gradients[1];
     }
 
     if (this.scaleX < 0) {
       this.flare('disappear');
     }
-  }
+  },
+
 });
 
 
