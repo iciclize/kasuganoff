@@ -17,6 +17,13 @@ var BOARD_WIDTH     = SCREEN_WIDTH - BOARD_PADDING*2;
 var BOARD_HEIGHT    = SCREEN_HEIGHT - BOARD_PADDING*2;
 var BOARD_OFFSET_X  = BOARD_PADDING+OBJECT_SIZE/2;  
 var BOARD_OFFSET_Y  = 120;
+var TYPE_BLANK = 0;
+var TYPE_CRASH = 1;
+var TYPE_BIKE  = 2;
+var TYPE_BOMB  = 3;
+var TYPE_BREAD = 4;
+var TYPE_BEEF  = 5;
+
 
 const ASSETS = {
   image: {
@@ -49,10 +56,9 @@ phina.define("MainScene", {
     };
 
 
-    this.map = Array.apply(null, Array(this.board.gridY.columns * this.board.gridX.columns)).map(function(){ return MAP_BLANK });
-
-    this.bikes = DisplayElement().addChildTo(this);
-    this.objectEmitter = ObjectEmitter(this);
+    this.map = Array.apply(null, Array(this.board.gridY.columns * this.board.gridX.columns)).map(function(){ return TYPE_BLANK });
+    this.gameObjects = DisplayElement().addChildTo(this);
+    this.objectManager = ObjectManager(this.board, this.map, this.gameObjects);
 
     // タッチでゲーム開始
     this.one('pointend', function() {
@@ -76,17 +82,9 @@ phina.define("MainScene", {
   update: function(app) {
 
     this.explosionManager.update();
-    this.objectEmitter.update();
+    this.objectManager.update();
 
-    // タイムを加算
     this.time += app.deltaTime;
-
-    // ブロックがすべてなくなったらクリア
-    /*
-    if (this.bikes.children.length <= 0) {
-      this.gameclear();
-    }
-    */
 
     var pointer = app.pointer;
     
@@ -100,6 +98,7 @@ phina.define("MainScene", {
       this.explosionManager.fire(app.pointer.x, app.pointer.y);
     }
 
+/*
     this.bikes.children.each(function(bike) {
       if (this.ganoff.hitTestElement(bike)) {
         if (!bike.broken) {
@@ -110,7 +109,7 @@ phina.define("MainScene", {
         }
       }
     }, this);
-
+*/
   },
 
   checkHit: function() {
@@ -155,34 +154,60 @@ phina.define("MainScene", {
 
 });
 
-
-var MAP_BLANK = 0;
-var MAP_CRASH = 1;
-var MAP_BIKE  = 2;
-var MAP_BOMB  = 3;
-var MAP_BREAD = 4;
-var MAP_BEEF  = 5;
-phina.define('ObjectEmitter', {
-  
-  init: function(app) {
-    this.app = app;
+phina.define('ObjectManager', {
+  init: function(grids, map, container) {
+    this.grids = grids;
+    this.objects = container;
     this.counter = 0;
-    app.map.map(function(type, i) {
-      return MAP_BLANK;
-    });
-    
+    this.map = map = map.map(function(_, i){
+      return this.arrange(Bike(), i);
+    }.bind(this));
   },
-
+  arrange: function(obj, index) {
+    var gx = this.grids.gridX;
+    var gy = this.grids.gridY;
+    var x = gx.span(index % gx.columns) + BOARD_OFFSET_X;
+    var y = gy.span(Math.floor(index / gx.columns)) + BOARD_OFFSET_Y;
+    obj.setPosition(x, y);
+    obj.addChildTo(this.objects);
+    return obj;
+  },
   update: function() {
-    var app = this.app;
-    app.map.forEach(function(type, i) {
-      if (app.map[i] == MAP_BLANK) {
-        app.map[i] = MAP_BIKE;
-        Bike(app, i).addChildTo(app.bikes);
+    var self = this;
+    this.map = this.map.map(function(obj, i){
+      switch(obj.type) {
+        case TYPE_BIKE:
+          if (obj.crashed) {
+            obj.remove();
+            var blank = Blank();
+            console.log("balnk", blank);
+            return blank;//Blank();
+          }
+          break;
+        case TYPE_BLANK:
+          if (obj.tick()) break;
+          var bike = self.arrange(Bike(), i);
+          console.log("bike", bike);
+          return bike;//self.arrange(Bike(), i);
+          break;
+        case TYPE_BEEF:
+        case TYPE_BREAD:
+        case TYPE_BOMB:
+          if (obj.touched) {
+            obj.remove();
+            return Blank();
+          }
+          if (obj.tick()) break;;
+          obj.remove();
+          return Blank();
+          break;
+        default:
+          console.log("FA");
+          break;
       }
+      return obj;
     });
   }
-
 });
 
 phina.define('Ganoff', {
@@ -229,8 +254,7 @@ phina.define('Ganoff', {
   setVector: function(vector) {
     this.speed = vector.length() * 1.2;
     this.direction = vector.normalize();
-  },
-
+  }, 
   _static: {
     brakeFn: function(speed) {
       return .003 * speed + .01;
@@ -239,46 +263,74 @@ phina.define('Ganoff', {
 
 });
 
+phina.define('Blank', {
+  init: function() {
+    this.type = TYPE_BLANK;
+    this.left = 100;
+  },
+  tick: function() {
+    return (--this.left > 0) ? true : false;
+  }
+});
+
 phina.define('GameObject', {
   superClass: 'Sprite',
 
-  init: function(app, index, type, sprite) {
+  init: function(type, sprite) {
     this.superInit(sprite, 500, 500);
-    this.index = index;
     this.type = type;
     this.width = OBJECT_SIZE - 5;
     this.height = OBJECT_SIZE - 5;
-    this.x = app.board.gridX.span(index % app.board.gridX.columns) + BOARD_OFFSET_X;
-    this.y = app.board.gridY.span(Math.floor(index / app.board.gridX.columns)) + BOARD_OFFSET_Y;
+  }
+});
+
+phina.define('ItemObject', {
+  superClass: 'GameObject',
+  init: function(type, sprite) {
+    this.superInit(type, sprite);
+    this.left = 100;
+    this.on('pointstart', this.remove);
+  },
+  tick: function() {
+    return (--this.left > 0) ? true : false;
   }
 });
 
 phina.define('Bike', {  
   superClass: 'GameObject',
-
-  init: function(app, index) {
-    this.superInit(app, index, MAP_BIKE, 'bike');
-    this.broken = false;
+  init: function() {
+    this.superInit(TYPE_BIKE, 'bike');
+    this.crashed = false;
   }
-
 });
 
 phina.define('Beef', {
-  superClass: 'GameObject',
-  init: function(app, index) {
-    this.superInit(app, index, MAP_BEEF, 'beef');
+  superClass: 'ItemObject',
+  init: function() {
+    this.superInit(TYPE_BEEF, 'beef');
+    this.on('pointstart', function() {
+      this.flare('beef');
+    }.bind(this));
   }
 });
+
 phina.define('Bomb', {
-  superClass: 'GameObject',
-  init: function(app, index) {
-    this.superInit(app, index, MAP_BOMB, 'bomb');
+  superClass: 'ItemObject',
+  init: function() {
+    this.superInit(TYPE_BOMB, 'bomb');
+    this.on('pointstart', function() {
+      this.flare('bomb');
+    }.bind(this));
   }
 });
+
 phina.define('Bread', {
-  superClass: 'GameObject',
-  init: function(app, index) {
-    this.superInit(app, index, MAP_BREAD, 'bread');
+  superClass: 'ItemObject',
+  init: function() {
+    this.superInit(TYPE_BREAD, 'bread');
+    this.on('pointstart', function() {
+      this.flare('bread');
+    }.bind(this));
   }
 });
 
@@ -348,7 +400,6 @@ phina.define('Explosion', {
 
   update: function() {
     if (this.emitted >= PARTICLE_NUM && this.particles.children.length <= 0) {
-      // this.flare('disappear');
       return false;
     }
 
