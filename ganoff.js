@@ -13,21 +13,22 @@ var SHARE_HASH_TAGS = 'breakout,phina_js';
 var SCREEN_WIDTH    = 514;  
 var SCREEN_HEIGHT   = 893;  
 var MAX_PER_LINE    = 7;  
-var OBJECT_SIZE       = 92;  
+var OBJECT_SIZE     = 92;  
 var BOARD_PADDING   = 10;
 var BOARD_WIDTH     = SCREEN_WIDTH - BOARD_PADDING*2;  
 var BOARD_HEIGHT    = SCREEN_HEIGHT - BOARD_PADDING*2;
-var BOARD_OFFSET_X  = BOARD_PADDING+OBJECT_SIZE/2;  
-var BOARD_OFFSET_Y  = 120;
-var TYPE_BLANK = 0;
+var BOARD_OFFSET_X  = BOARD_PADDING+OBJECT_SIZE/2 - 2;  
+var BOARD_OFFSET_Y  = 140;
+var TYPE_INIT  = 0;
+var TYPE_BLANK = 1;
 var TYPE_BIKE  = 2;
 var TYPE_BOMB  = 3;
 var TYPE_BREAD = 4;
 var TYPE_BEEF  = 5;
-/* 各アイテムが出る確率. 10000分のn.  */
-var PROB_BOMB = 50;
-var PROB_BREAD = 40;
-var PROB_BEEF = 10;
+
+var PROB_BOMB  = 500;
+var PROB_BEEF  = 400;
+var PROB_BREAD = 100;
 
 
 const ASSETS = {
@@ -45,20 +46,23 @@ phina.define("MainScene", {
 
   init: function(options) {
     this.superInit(options);
-    
-    this.gameObjects = DisplayElement().addChildTo(this);
 
-    this.board = {
+    var gameObjects = DisplayElement().addChildTo(this);
+    var board = {
       gridX: Grid( BOARD_WIDTH, Math.ceil(BOARD_WIDTH / OBJECT_SIZE) + 1 ),
       gridY: Grid( BOARD_HEIGHT - BOARD_OFFSET_Y, Math.ceil(BOARD_HEIGHT / OBJECT_SIZE) )
     };
+    var ganoff = Ganoff().addChildTo(this);
+    var explosionManager = ExplosionManager(this);
+    var map = Array.apply(null, Array(board.gridY.columns * board.gridX.columns)).map(function(){ return TYPE_INIT });
+    var objectManager = ObjectManager(board, map, gameObjects, ganoff);
 
-    this.ganoff = Ganoff().addChildTo(this);
-    this.explosionManager = ExplosionManager(this);
-    
-    var map = Array.apply(null, Array(this.board.gridY.columns * this.board.gridX.columns)).map(function(){ return TYPE_BLANK });
+    this.gameObjects = gameObjects;
+    this.board = board;
+    this.ganoff = ganoff;
+    this.explosionManager = explosionManager;
     this.map = map;
-    this.objectManager = ObjectManager(this.board, map, this.gameObjects, this.ganoff);
+    this.objectManager = objectManager;
     
     this.scoreLabel = Label('0').setPosition(this.gridX.center(), this.gridY.span(1)).addChildTo(this);
     this.scoreLabel.fill = 'black';
@@ -71,28 +75,20 @@ phina.define("MainScene", {
     this.score = 0;
     this.time = 0;
     this.combo = 0;
-    
-    this.label = phina.display.Label(320).setPosition(60, 40).addChildTo(this);
+
+    this.flag = false;
   },
 
   update: function(app) {
-
-    this.explosionManager.update();
-    this.objectManager.update();
-
-    this.time += app.deltaTime;
-
-    var pointer = app.pointer;
+    this.gameObjects.children.each(function(obj) {
+      if (obj.touched) {
+        if (obj.type == TYPE_BEEF) this.big();
+        else if (obj.type == TYPE_BREAD) this.fast();
+        else if (obj.type == TYPE_BOMB) app;
+      }
+    }, this);
     
-    if (pointer.getPointingEnd()) {
-      this.label.text = pointer.flickVelocity.toAngle().toDegree().floor();
-      let input = Vector2(pointer.fx, pointer.fy);
-      this.ganoff.setVector(input);
-    }
-
-    if (pointer.getPointingStart()) {
-      this.explosionManager.fire(app.pointer.x, app.pointer.y);
-    }
+    this.objectManager.update();
 
     this.gameObjects.children.each(function(obj) {
       if (this.ganoff.hitTestElement(obj)) {
@@ -102,14 +98,64 @@ phina.define("MainScene", {
         this.objectManager.hit(obj);
       }
     }, this);
-  },
 
-  checkHit: function() {
-    this.bikes.children.some(function(bike) {
-        return true;
-    }, this);
-  },
+    this.explosionManager.update();
 
+    this.time += app.deltaTime;
+    var pointer = app.pointer;
+    
+    if (pointer.getPointingEnd()) {
+      if (this.flag) return;
+      let input = Vector2(pointer.fx, pointer.fy);
+      this.ganoff.setVector(input);
+      this.flag = true;
+    }
+
+    if (pointer.getPointingStart()) {
+      this.explosionManager.fire(app.pointer.x, app.pointer.y);
+    }
+
+  },
+  bomb: function() {
+  },
+  _bigNum: 0,
+  big: function() {
+    /* 随分乱暴な書き方をしてるけど動くからいいや(伏線) */
+    this._bigNum++;
+    if (this._bigNum > 1) return;
+    var o = { width: this.ganoff.width, height: this.ganoff.height };
+    var self = this;
+    this.ganoff.tweener
+      .to({ width: o.width * 3, height: o.height * 3 }, 300)
+      .wait(4000)
+      .call(check).play();
+    function check() {
+      self._bigNum--;
+      if (self._bigNum > 0)
+        self.ganoff.tweener.wait(4000).call(check).play();
+      else
+        self.ganoff.tweener.to({ width: o.width, height: o.height }, 300).play();
+    }
+  },
+  _fastNum: 0,
+  fast: function() {
+    this._fastNum++;
+    if (this._fastNum > 1) return;
+    var o = { speed: this.ganoff.speed, deceleration: this.ganoff.deceleration };
+    var self = this;
+    this.ganoff.speed = 170;
+    this.ganoff.deceleration = function() { return 0; };
+    this.ganoff.tweener.wait(4000).call(check).play();
+    function check() {
+      self._fastNum--;
+      if (self._fastNum > 0) {
+        self.ganoff.tweener.wait(4000).call(check).play();
+      } else {
+        self.ganoff.speed = o.speed;
+        self.ganoff.deceleration = o.deceleration;
+      }
+    }
+  },
   gameclear: function() {
     // add clear bonus
     var bonus = 2000;
@@ -155,7 +201,7 @@ phina.define('ObjectManager', {
     this.map = (function() {
       // もしここでArray.prototype.mapを使うと呼び出し元の変数mapへの参照が切れるのでしてはいけない(戒め)
       for (var i = 0; i < map.length; i++) {
-        map[i] = this.arrange(Blank(0), i);
+        map[i] = this.arrange(Blank(0, true), i);
       }
       return map;
     }.call(this));
@@ -165,10 +211,13 @@ phina.define('ObjectManager', {
     var gy = this.grids.gridY;
     var x = gx.span(index % gx.columns) + BOARD_OFFSET_X;
     var y = gy.span(Math.floor(index / gx.columns)) + BOARD_OFFSET_Y;
-    obj.setPosition(x, y).addChildTo(this.objects);
+    var sx = Math.randint(-7, +7);
+    var sy = Math.randint(-7, +7);
+    obj.setPosition(x + sx, y + sy).addChildTo(this.objects);
     return obj;
   },
   hit: function(obj) {
+    if (this.ganoff.speed == 0) obj.remove();
     if (obj.type == TYPE_BIKE)
       obj.crashed = true;
   },
@@ -185,6 +234,7 @@ phina.define('ObjectManager', {
         case TYPE_BLANK:
           if (obj.tick()) break;
           if (this.ganoff.hitTestElement(obj)) break;
+          if (obj.bikeonly) return this.arrange(Bike(), i);
           var p = Math.random() * 10000;
           if (p <= PROB_BOMB) {
             return this.arrange(Bomb(), i);
@@ -222,6 +272,7 @@ phina.define('Ganoff', {
     this.height = 254 * .17;
     this.setPosition(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2);
     this.speed = 0;
+    this.deceleration = Ganoff.brakeFn;
     this.direction = Vector2(0, 1).normalize();
   },
 
@@ -230,7 +281,7 @@ phina.define('Ganoff', {
       this.move();
       this.wallReflection();
     }, this);
-    this.speed -= Ganoff.brakeFn(this.speed);
+    this.speed -= this.deceleration(this.speed);
   },
 
   wallReflection: function() {
@@ -241,8 +292,8 @@ phina.define('Ganoff', {
       this.right = SCREEN_WIDTH;
       this.direction.x *= -1;
     }
-    if (this.top < 0) {
-      this.top = 0;
+    if (this.top < BOARD_OFFSET_Y - 50) {
+      this.top = BOARD_OFFSET_Y - 50;
       this.direction.y *= -1;
     } else if (this.bottom > SCREEN_HEIGHT) {
       this.bottom = SCREEN_HEIGHT;
@@ -280,11 +331,12 @@ phina.define('GameObject', {
 
 phina.define('Blank', {
   superClass: 'phina.app.Object2D',
-  init: function(time) {
+  init: function(time, bikeonly) {
     this.superInit();
     this.type = TYPE_BLANK;
     this.width = OBJECT_SIZE - 5;
     this.height = OBJECT_SIZE - 5;
+    this.bikeonly = (typeof(bikeonly)) ? bikeonly : false;
     this.timer = (Blank.isNumeric(time)) ? time : 30;
   },
   tick: function() {
@@ -302,7 +354,11 @@ phina.define('ItemObject', {
   init: function(type, sprite) {
     this.superInit(type, sprite);
     this.timer = 60;
-    this.on('pointstart', this.remove);
+    this.setInteractive(true);
+    this.touched = false;
+    this.on('pointstart', function() {
+      this.touched = true;
+    }, this);
   },
   tick: function() {
     return (--this.timer > 0) ? true : false;
@@ -321,9 +377,6 @@ phina.define('Beef', {
   superClass: 'ItemObject',
   init: function() {
     this.superInit(TYPE_BEEF, 'beef');
-    this.on('pointstart', function() {
-      this.flare('beef');
-    }, this);
   }
 });
 
@@ -331,9 +384,6 @@ phina.define('Bomb', {
   superClass: 'ItemObject',
   init: function() {
     this.superInit(TYPE_BOMB, 'bomb');
-    this.on('pointstart', function() {
-      this.flare('bomb');
-    }, this);
   }
 });
 
@@ -341,9 +391,6 @@ phina.define('Bread', {
   superClass: 'ItemObject',
   init: function() {
     this.superInit(TYPE_BREAD, 'bread');
-    this.on('pointstart', function() {
-      this.flare('bread');
-    }, this);
   }
 });
 
