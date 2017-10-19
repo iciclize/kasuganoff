@@ -6,9 +6,9 @@
 
 phina.globalize();
 
-var SHARE_URL = 'http://phiary.me/phina-js-breakout/';  
-var SHARE_MESSAGE = 'phina.js でブロック崩しを作ろう!!\nSCORE:{score}';  
-var SHARE_HASH_TAGS = 'breakout,phina_js';
+var SHARE_URL = 'http://iciclize.net:8080';  
+var SHARE_MESSAGE = 'やったぜ。';  
+var SHARE_HASH_TAGS = '春日ビーフストロガノフ,春日ビーフ,雙峰祭,筑波大学,雙峰祭';
 
 var SCREEN_WIDTH    = 514;  
 var SCREEN_HEIGHT   = 893;  
@@ -38,6 +38,9 @@ const ASSETS = {
     'beef': './assets/beef.png',
     'bread': './assets/bread.png',
     'bomb': './assets/bomb.png'
+  },
+  sound: {
+    'exp': './explosion.mp3'
   }
 };
 
@@ -67,14 +70,7 @@ phina.define("MainScene", {
     this.scoreLabel = Label('0').setPosition(this.gridX.center(), this.gridY.span(1) - 10).addChildTo(this);
     this.scoreLabel.fill = 'black';
 
-    // タッチでゲーム開始
-    this.one('pointend', function() {
-
-    });
-
     this.score = 0;
-    this.time = 0;
-    this.combo = 0;
 
     this.flag = false;
   },
@@ -96,12 +92,12 @@ phina.define("MainScene", {
       if (this.ganoff.hitTestElement(obj))
         if (obj.type == TYPE_BIKE)
           if (this.objectManager.hit(obj)) {
+            SoundManager.play('exp');
             this.explosionManager.fire(obj.x, obj.y);
-            this.addScore(1);
+            this.score += 1;
           }
     }, this);
 
-    this.time += app.deltaTime;
     var pointer = app.pointer;
     
     if (pointer.getPointingEnd()) {
@@ -111,23 +107,22 @@ phina.define("MainScene", {
       this.flag = true;
     }
 
-  },
-  addScore: function(point) {
-    this.score += point;
-    this.scoreLabel.text = this.score;
+    if (this.flag)
+      if (this.ganoff.speed <= 0) this.gameover();
+
   },
   bomb: function() {
     this.gameObjects.children.each(function(obj) {
       if (obj.type == TYPE_BIKE) {
         this.explosionManager.fire(obj.x, obj.y);
         this.objectManager.hit(obj);
-        this.addScore(1);
+        this.score += 1;
       }
     }, this);
   },
   _bigNum: 0,
   big: function() {
-    /* 随分乱暴な書き方をしてるけど動くからいいや(伏線) */
+    /* 随分乱暴な書き方をしてるけど動くからま、多少はね？ */
     this._bigNum++;
     if (this._bigNum > 1) return;
     var o = { width: this.ganoff.width, height: this.ganoff.height };
@@ -164,22 +159,10 @@ phina.define("MainScene", {
       }
     }
   },
-  gameclear: function() {
-    // add clear bonus
-    var bonus = 2000;
-    this.score += bonus;
-
-    // add time bonus
-    var seconds = (this.time/1000).floor();
-    var bonusTime = Math.max(60*10-seconds, 0);
-    this.score += (bonusTime*10);
-
-    this.gameover();
-  },
 
   gameover: function() {
     this.exit({
-      score: this.score,
+      score: this.score + '点',
       message: SHARE_MESSAGE,
       url: SHARE_URL,
       hashtags: SHARE_HASH_TAGS
@@ -188,9 +171,7 @@ phina.define("MainScene", {
 
   _accessor: {
     score: {
-      get: function() {
-        return this._score;
-      },
+      get: function() { return this._score; },
       set: function(v) {
         this._score = v;
         this.scoreLabel.text = v;
@@ -407,41 +388,6 @@ phina.define('Bread', {
   }
 });
 
-phina.define('ComboLabel', {  
-  superClass: 'Label',
-  init: function(num) {
-    this.superInit(num + ' combo!');
-
-    this.stroke = 'black';
-    this.strokeWidth = 8;
-
-    // 数によって色とサイズを分岐
-    if (num < 5) {
-      this.fill = 'hsl(40, 60%, 60%)';
-      this.fontSize = 16;
-    }
-    else if (num < 10) {
-      this.fill = 'hsl(120, 60%, 60%)';
-      this.fontSize = 32;
-    }
-    else {
-      this.fill = 'hsl(220, 60%, 60%)';
-      this.fontSize = 48;
-    }
-
-    // フェードアウトして削除
-    this.tweener
-      .by({
-        alpha: -1,
-        y: -50,
-      })
-      .call(function() {
-        this.remove();
-      }, this)
-      ;
-  },
-});
-
 phina.define('ExplosionManager', {
   init: function(display) {
     this.explosions = [];
@@ -461,7 +407,7 @@ phina.define('ExplosionManager', {
 
 });
 
-var PARTICLE_NUM = 10;
+var PARTICLE_NUM = 5;
 phina.define('Explosion', {
 
   init: function(x, y, display) {
@@ -491,8 +437,8 @@ phina.define('Explosion', {
 var PARTICLE_HUE_RANGE_BEGIN  = 0;
 var PARTICLE_HUE_RANGE_END    = 30;
 var PARTICLE_VELOCITY_RANGE   = 14;
-var PARTICLE_RADIUS           = 12;
-var PARTICLE_NOIZE_RANGE      = 4;
+var PARTICLE_RADIUS           = 7;
+var PARTICLE_NOIZE_RANGE      = 12;
 
 phina.define('Particle', {  
   superClass: 'CircleShape',
@@ -509,16 +455,16 @@ phina.define('Particle', {
       var _gradients = [];
 
       var fire = this.canvas.context.createRadialGradient(0, 0, 0, 0, 0, this.radius);
-      fire.addColorStop(0, 'hsla({0}, 75%, 50%, 1.0)'.format(Math.randint(PARTICLE_HUE_RANGE_BEGIN, PARTICLE_HUE_RANGE_END)));
-      fire.addColorStop(1, 'hsla({0}, 75%, 50%, 0.0)'.format(Math.randint(PARTICLE_HUE_RANGE_BEGIN, PARTICLE_HUE_RANGE_END)));
+      fire.addColorStop(0, 'hsla({0}, 75%, 60%, 1.0)'.format(Math.randint(PARTICLE_HUE_RANGE_BEGIN, PARTICLE_HUE_RANGE_END)));
+      fire.addColorStop(1, 'hsla({0}, 75%, 60%, 0.0)'.format(Math.randint(PARTICLE_HUE_RANGE_BEGIN, PARTICLE_HUE_RANGE_END)));
       
       var ash1 = this.canvas.context.createRadialGradient(0, 0, 0, 0, 0, this.radius);
       ash1.addColorStop(0, 'hsla({0}, {1}%, {2}%, 1.0)'.format(this.hue, 20, 30) );
       ash1.addColorStop(1, 'hsla({0}, {1}%, {2}%, 0.0)'.format(this.hue, 20, 30) );
 
       var ash2 = this.canvas.context.createRadialGradient(0, 0, 0, 0, 0, this.radius);
-      ash2.addColorStop(0, 'hsla({0}, {1}%, {2}%, 1.0)'.format(this.hue, 0, 0) );
-      ash2.addColorStop(1, 'hsla({0}, {1}%, {2}%, 0.0)'.format(this.hue, 0, 0) );
+      ash2.addColorStop(0, 'hsla({0}, {1}%, {2}%, 1.0)'.format(this.hue, 0, 10) );
+      ash2.addColorStop(1, 'hsla({0}, {1}%, {2}%, 0.0)'.format(this.hue, 0, 10) );
       
       _gradients.push(fire, ash1, ash2);
 
@@ -531,22 +477,22 @@ phina.define('Particle', {
     this.x = Math.randint(x - PARTICLE_NOIZE_RANGE, x + PARTICLE_NOIZE_RANGE);
     this.y = Math.randint(y - PARTICLE_NOIZE_RANGE, y + PARTICLE_NOIZE_RANGE);
     this.velocity = Vector2.random(0, 360, Math.randfloat(0, PARTICLE_VELOCITY_RANGE));
-    this.scaleX = 3.2;
-    this.scaleY = 3.2;
+    this.scaleX = 6.4;
+    this.scaleY = 6.4;
     this.a = 0;
   },
 
   update: function() {
-    this.a += .06;
+    this.a += .16;
     this.position.add(this.velocity);
     this.velocity = this.velocity.fromDegree(this.velocity.toDegree(), this.velocity.length() * .8);
     this.scaleX -= this.a;
     this.scaleY -= this.a;
 
-    if (this.scaleX <= 2.0) {
+    if (this.scaleX <= 1.4) {
       if (this.fill != this.gradients[2])
         this.fill = this.gradients[2];
-    } else if (this.scaleX <= 2.9) {
+    } else if (this.scaleX <= 5.7) {
       if (this.fill != this.gradients[1])
         this.fill = this.gradients[1];
     }
