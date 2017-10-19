@@ -2,6 +2,8 @@
  * runstant
  */
 
+// ガノフが範囲外を飛んでいる
+
 phina.globalize();
 
 var SHARE_URL = 'http://phiary.me/phina-js-breakout/';  
@@ -18,17 +20,23 @@ var BOARD_HEIGHT    = SCREEN_HEIGHT - BOARD_PADDING*2;
 var BOARD_OFFSET_X  = BOARD_PADDING+OBJECT_SIZE/2;  
 var BOARD_OFFSET_Y  = 120;
 var TYPE_BLANK = 0;
-var TYPE_CRASH = 1;
 var TYPE_BIKE  = 2;
 var TYPE_BOMB  = 3;
 var TYPE_BREAD = 4;
 var TYPE_BEEF  = 5;
+/* 各アイテムが出る確率. 10000分のn.  */
+var PROB_BOMB = 50;
+var PROB_BREAD = 40;
+var PROB_BEEF = 10;
 
 
 const ASSETS = {
   image: {
-    "ganoff": "./assets/ganoff.png",
-    "bike": "./assets/bike.png"
+    'ganoff': './assets/ganoff.png',
+    'bike': './assets/bike.png',
+    'beef': './assets/beef.png',
+    'bread': './assets/bread.png',
+    'bomb': './assets/bomb.png'
   }
 };
 
@@ -37,28 +45,23 @@ phina.define("MainScene", {
 
   init: function(options) {
     this.superInit(options);
-
-    // スコアラベル
-    this.scoreLabel = Label('0').addChildTo(this);
-    this.scoreLabel.x = this.gridX.center();
-    this.scoreLabel.y = this.gridY.span(1);
-    this.scoreLabel.fill = 'black';
+    
+    this.gameObjects = DisplayElement().addChildTo(this);
 
     this.board = {
-      gridX: Grid({
-        width: BOARD_WIDTH,
-        columns: Math.ceil(BOARD_WIDTH / OBJECT_SIZE) + 1,
-      }),
-      gridY: Grid({
-        width: BOARD_HEIGHT - BOARD_OFFSET_Y,
-        columns: Math.ceil(BOARD_HEIGHT / OBJECT_SIZE),
-      })
+      gridX: Grid( BOARD_WIDTH, Math.ceil(BOARD_WIDTH / OBJECT_SIZE) + 1 ),
+      gridY: Grid( BOARD_HEIGHT - BOARD_OFFSET_Y, Math.ceil(BOARD_HEIGHT / OBJECT_SIZE) )
     };
 
-
-    this.map = Array.apply(null, Array(this.board.gridY.columns * this.board.gridX.columns)).map(function(){ return TYPE_BLANK });
-    this.gameObjects = DisplayElement().addChildTo(this);
-    this.objectManager = ObjectManager(this.board, this.map, this.gameObjects);
+    this.ganoff = Ganoff().addChildTo(this);
+    this.explosionManager = ExplosionManager(this);
+    
+    var map = Array.apply(null, Array(this.board.gridY.columns * this.board.gridX.columns)).map(function(){ return TYPE_BLANK });
+    this.map = map;
+    this.objectManager = ObjectManager(this.board, map, this.gameObjects, this.ganoff);
+    
+    this.scoreLabel = Label('0').setPosition(this.gridX.center(), this.gridY.span(1)).addChildTo(this);
+    this.scoreLabel.fill = 'black';
 
     // タッチでゲーム開始
     this.one('pointend', function() {
@@ -69,14 +72,7 @@ phina.define("MainScene", {
     this.time = 0;
     this.combo = 0;
     
-    var label = phina.display.Label(320).addChildTo(this);
-    label.setPosition(60, 40);
-    this.label = label;
-
-    let ganoff = Ganoff().addChildTo(this);
-    this.ganoff = ganoff;
-
-    this.explosionManager = ExplosionManager(this);
+    this.label = phina.display.Label(320).setPosition(60, 40).addChildTo(this);
   },
 
   update: function(app) {
@@ -98,18 +94,14 @@ phina.define("MainScene", {
       this.explosionManager.fire(app.pointer.x, app.pointer.y);
     }
 
-/*
-    this.bikes.children.each(function(bike) {
-      if (this.ganoff.hitTestElement(bike)) {
-        if (!bike.broken) {
-          bike.broken = true;
-          this.explosionManager.fire(bike.x, bike.y);
-          bike.remove();
-          console.log(bike.index);
-        }
+    this.gameObjects.children.each(function(obj) {
+      if (this.ganoff.hitTestElement(obj)) {
+        if (obj.type == TYPE_BIKE)
+          this.explosionManager.fire(obj.x, obj.y);
+
+        this.objectManager.hit(obj);
       }
     }, this);
-*/
   },
 
   checkHit: function() {
@@ -155,58 +147,70 @@ phina.define("MainScene", {
 });
 
 phina.define('ObjectManager', {
-  init: function(grids, map, container) {
+  init: function(grids, map, container, ganoff) {
     this.grids = grids;
+    this.ganoff = ganoff;
     this.objects = container;
     this.counter = 0;
-    this.map = map = map.map(function(_, i){
-      return this.arrange(Bike(), i);
-    }.bind(this));
+    this.map = (function() {
+      // もしここでArray.prototype.mapを使うと呼び出し元の変数mapへの参照が切れるのでしてはいけない(戒め)
+      for (var i = 0; i < map.length; i++) {
+        map[i] = this.arrange(Blank(0), i);
+      }
+      return map;
+    }.call(this));
   },
   arrange: function(obj, index) {
     var gx = this.grids.gridX;
     var gy = this.grids.gridY;
     var x = gx.span(index % gx.columns) + BOARD_OFFSET_X;
     var y = gy.span(Math.floor(index / gx.columns)) + BOARD_OFFSET_Y;
-    obj.setPosition(x, y);
-    obj.addChildTo(this.objects);
+    obj.setPosition(x, y).addChildTo(this.objects);
     return obj;
   },
+  hit: function(obj) {
+    if (obj.type == TYPE_BIKE)
+      obj.crashed = true;
+  },
   update: function() {
-    var self = this;
     this.map = this.map.map(function(obj, i){
       switch(obj.type) {
         case TYPE_BIKE:
           if (obj.crashed) {
             obj.remove();
-            var blank = Blank();
-            console.log("balnk", blank);
-            return blank;//Blank();
+            return this.arrange(Blank(), i);
           }
           break;
+
         case TYPE_BLANK:
           if (obj.tick()) break;
-          var bike = self.arrange(Bike(), i);
-          console.log("bike", bike);
-          return bike;//self.arrange(Bike(), i);
+          if (this.ganoff.hitTestElement(obj)) break;
+          var p = Math.random() * 10000;
+          if (p <= PROB_BOMB) {
+            return this.arrange(Bomb(), i);
+          } else if (p <= PROB_BREAD + PROB_BOMB) {
+            return this.arrange(Bread(), i);
+          } else if (p <= PROB_BEEF + PROB_BOMB + PROB_BREAD) {
+            return this.arrange(Beef(), i);
+          } else {
+              return this.arrange(Bike(), i);
+          }
           break;
+
         case TYPE_BEEF:
         case TYPE_BREAD:
         case TYPE_BOMB:
           if (obj.touched) {
             obj.remove();
-            return Blank();
+            return this.arrange(Blank(), i);
           }
-          if (obj.tick()) break;;
+          if (obj.tick()) break;
           obj.remove();
-          return Blank();
-          break;
-        default:
-          console.log("FA");
+          return this.arrange(Blank(), i);
           break;
       }
       return obj;
-    });
+    }, this);
   }
 });
 
@@ -226,7 +230,7 @@ phina.define('Ganoff', {
       this.move();
       this.wallReflection();
     }, this);
-    this.speed -= this._static.brakeFn(this.speed);
+    this.speed -= Ganoff.brakeFn(this.speed);
   },
 
   wallReflection: function() {
@@ -263,19 +267,9 @@ phina.define('Ganoff', {
 
 });
 
-phina.define('Blank', {
-  init: function() {
-    this.type = TYPE_BLANK;
-    this.left = 100;
-  },
-  tick: function() {
-    return (--this.left > 0) ? true : false;
-  }
-});
 
 phina.define('GameObject', {
   superClass: 'Sprite',
-
   init: function(type, sprite) {
     this.superInit(sprite, 500, 500);
     this.type = type;
@@ -284,15 +278,34 @@ phina.define('GameObject', {
   }
 });
 
+phina.define('Blank', {
+  superClass: 'phina.app.Object2D',
+  init: function(time) {
+    this.superInit();
+    this.type = TYPE_BLANK;
+    this.width = OBJECT_SIZE - 5;
+    this.height = OBJECT_SIZE - 5;
+    this.timer = (Blank.isNumeric(time)) ? time : 30;
+  },
+  tick: function() {
+    return (--this.timer > 0) ? true : false;
+  },
+  _static: {
+    isNumeric: function(n) {
+      return !isNaN(parseFloat(n)) && isFinite(n);
+    }
+  }
+});
+
 phina.define('ItemObject', {
   superClass: 'GameObject',
   init: function(type, sprite) {
     this.superInit(type, sprite);
-    this.left = 100;
+    this.timer = 60;
     this.on('pointstart', this.remove);
   },
   tick: function() {
-    return (--this.left > 0) ? true : false;
+    return (--this.timer > 0) ? true : false;
   }
 });
 
@@ -310,7 +323,7 @@ phina.define('Beef', {
     this.superInit(TYPE_BEEF, 'beef');
     this.on('pointstart', function() {
       this.flare('beef');
-    }.bind(this));
+    }, this);
   }
 });
 
@@ -320,7 +333,7 @@ phina.define('Bomb', {
     this.superInit(TYPE_BOMB, 'bomb');
     this.on('pointstart', function() {
       this.flare('bomb');
-    }.bind(this));
+    }, this);
   }
 });
 
@@ -330,7 +343,7 @@ phina.define('Bread', {
     this.superInit(TYPE_BREAD, 'bread');
     this.on('pointstart', function() {
       this.flare('bread');
-    }.bind(this));
+    }, this);
   }
 });
 
