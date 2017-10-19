@@ -7,7 +7,7 @@
 phina.globalize();
 
 var SHARE_URL = 'http://iciclize.net:8080';  
-var SHARE_MESSAGE = 'やったぜ。';  
+var SHARE_MESSAGE = '※音量注意';  
 var SHARE_HASH_TAGS = '春日ビーフストロガノフ,春日ビーフ,雙峰祭,筑波大学,雙峰祭';
 
 var SCREEN_WIDTH    = 514;  
@@ -40,7 +40,7 @@ const ASSETS = {
     'bomb': './assets/bomb.png'
   },
   sound: {
-    'exp': './explosion.mp3'
+    'exp': './assets/explosion.mp3'
   }
 };
 
@@ -114,6 +114,7 @@ phina.define("MainScene", {
   bomb: function() {
     this.gameObjects.children.each(function(obj) {
       if (obj.type == TYPE_BIKE) {
+        SoundManager.play('exp');
         this.explosionManager.fire(obj.x, obj.y);
         this.objectManager.hit(obj);
         this.score += 1;
