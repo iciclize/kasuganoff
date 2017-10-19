@@ -26,9 +26,9 @@ var TYPE_BOMB  = 3;
 var TYPE_BREAD = 4;
 var TYPE_BEEF  = 5;
 
-var PROB_BOMB  = 500;
-var PROB_BEEF  = 400;
-var PROB_BREAD = 100;
+var PROB_BOMB  = 50;
+var PROB_BEEF  = 40;
+var PROB_BREAD = 10;
 
 
 const ASSETS = {
@@ -64,7 +64,7 @@ phina.define("MainScene", {
     this.map = map;
     this.objectManager = objectManager;
     
-    this.scoreLabel = Label('0').setPosition(this.gridX.center(), this.gridY.span(1)).addChildTo(this);
+    this.scoreLabel = Label('0').setPosition(this.gridX.center(), this.gridY.span(1) - 10).addChildTo(this);
     this.scoreLabel.fill = 'black';
 
     // タッチでゲーム開始
@@ -80,26 +80,26 @@ phina.define("MainScene", {
   },
 
   update: function(app) {
+    this.explosionManager.update();
+    
     this.gameObjects.children.each(function(obj) {
       if (obj.touched) {
         if (obj.type == TYPE_BEEF) this.big();
         else if (obj.type == TYPE_BREAD) this.fast();
-        else if (obj.type == TYPE_BOMB) app;
+        else if (obj.type == TYPE_BOMB) this.bomb();
       }
     }, this);
     
     this.objectManager.update();
 
     this.gameObjects.children.each(function(obj) {
-      if (this.ganoff.hitTestElement(obj)) {
+      if (this.ganoff.hitTestElement(obj))
         if (obj.type == TYPE_BIKE)
-          this.explosionManager.fire(obj.x, obj.y);
-
-        this.objectManager.hit(obj);
-      }
+          if (this.objectManager.hit(obj)) {
+            this.explosionManager.fire(obj.x, obj.y);
+            this.addScore(1);
+          }
     }, this);
-
-    this.explosionManager.update();
 
     this.time += app.deltaTime;
     var pointer = app.pointer;
@@ -111,12 +111,19 @@ phina.define("MainScene", {
       this.flag = true;
     }
 
-    if (pointer.getPointingStart()) {
-      this.explosionManager.fire(app.pointer.x, app.pointer.y);
-    }
-
+  },
+  addScore: function(point) {
+    this.score += point;
+    this.scoreLabel.text = this.score;
   },
   bomb: function() {
+    this.gameObjects.children.each(function(obj) {
+      if (obj.type == TYPE_BIKE) {
+        this.explosionManager.fire(obj.x, obj.y);
+        this.objectManager.hit(obj);
+        this.addScore(1);
+      }
+    }, this);
   },
   _bigNum: 0,
   big: function() {
@@ -145,11 +152,12 @@ phina.define("MainScene", {
     var self = this;
     this.ganoff.speed = 170;
     this.ganoff.deceleration = function() { return 0; };
-    this.ganoff.tweener.wait(4000).call(check).play();
+    this.ganoff.tweener2 = phina.accessory.Tweener().attachTo(this.ganoff);
+    this.ganoff.tweener2.wait(4000).call(check).play();
     function check() {
       self._fastNum--;
       if (self._fastNum > 0) {
-        self.ganoff.tweener.wait(4000).call(check).play();
+        self.ganoff.tweener2.wait(4000).call(check).play();
       } else {
         self.ganoff.speed = o.speed;
         self.ganoff.deceleration = o.deceleration;
@@ -217,9 +225,14 @@ phina.define('ObjectManager', {
     return obj;
   },
   hit: function(obj) {
-    if (this.ganoff.speed == 0) obj.remove();
+    if (this.ganoff.speed == 0) {
+      obj.remove();
+      this.map[this.map.indexOf(obj)] = this.arrange(Blank(0), this.map.indexOf(obj));
+      return false;
+    }
     if (obj.type == TYPE_BIKE)
       obj.crashed = true;
+    return true;
   },
   update: function() {
     this.map = this.map.map(function(obj, i){
