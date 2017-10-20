@@ -6,6 +6,8 @@
 
 phina.globalize();
 
+var GAME_TITLE = '迫真ガノフ部\n〜春日エリアの裏技〜';
+
 var SHARE_URL = 'http://iciclize.net:8080';  
 var SHARE_MESSAGE = '※音量注意';  
 var SHARE_HASH_TAGS = '春日ビーフストロガノフ,春日ビーフ,雙峰祭,筑波大学,雙峰祭';
@@ -37,12 +39,65 @@ const ASSETS = {
     'bike': './assets/bike.png',
     'beef': './assets/beef.png',
     'bread': './assets/bread.png',
-    'bomb': './assets/bomb.png'
+    'bomb': './assets/bomb.png',
+    'kasubike': './assets/kasubike.jpg'
   },
   sound: {
     'exp': './assets/explosion.mp3'
   }
 };
+
+phina.define("TitleScene", {
+  superClass: 'DisplayScene',
+  init: function() {
+    this.superInit({
+      width: SCREEN_WIDTH,
+      height: SCREEN_HEIGHT
+    });
+    this.backgroundColor = 'white';
+    var background = Sprite('kasubike', 728, 970).addChildTo(this).setPosition(this.gridX.center(), this.gridY.center());
+    var ganoff = Sprite('ganoff', 496 * .7, 254 * .7).addChildTo(this).setPosition(this.gridX.center(), this.gridY.span(3));
+    var label = LabelArea({
+      text: GAME_TITLE,
+      fontSize: 48,
+      width: SCREEN_WIDTH - 20,
+      height: 120,
+      align: 'center',
+      fill: 'white',
+      backgroundColor: 'hsla(0, 0%, 0%, .5)'
+    }).addChildTo(this).setPosition(this.gridX.center(), this.gridY.span(6));
+    var howtoplay = Button({
+      x: this.gridX.center(),
+      y: this.gridY.span(12) - 40,
+      width: 470,
+      height: 70,
+      text: "あそびかた - How to Play",
+      fontSize: 32,
+      fontColor: 'white',
+      cornerRadius: 8,
+      fill: 'hsla(0, 40%, 35%, .9)',
+    }).addChildTo(this)
+    .on('pointstart', function() { this.app.pushScene(HowToPlayScene()); }, this);
+    var start = Button({
+      x: this.gridX.center(),
+      y: this.gridY.span(13) - 10,
+      width: 470,
+      height: 70,
+      text: "スタート - Start",
+      fontSize: 32,
+      fontColor: 'white',
+      cornerRadius: 8,
+      fill: 'hsla(0, 40%, 35%, .9)',
+    }).addChildTo(this)
+    .on('pointstart', function() { this.exit(); }, this);
+  }
+});
+
+phina.define('HowToPlayScene', {
+  superClass: 'DisplayScene',
+  init: function() {
+  }
+});
 
 phina.define("MainScene", {  
   superClass: 'DisplayScene',
@@ -506,19 +561,27 @@ phina.define('Particle', {
 });
 
 
-
 phina.main(function() {  
   var app = GameApp({
-    title: 'Breakout',
-    startLabel: location.search.substr(1).toObject().scene || 'title',
+    title: GAME_TITLE,
+    startLabel: 'Title',
     width: SCREEN_WIDTH,
     height: SCREEN_HEIGHT,
-    assets: ASSETS
+    assets: ASSETS,
+    scenes: [{
+        className: 'TitleScene',
+        label: 'Title',
+        nextLabel: 'Main'
+      },
+      {
+        className: 'MainScene',
+        label: 'Main',
+        nextLabel: 'Title'
+      }
+    ]
   });
 
   app.fps = 30;
-
   app.enableStats();
-
   app.run();
 });
