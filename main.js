@@ -6,6 +6,8 @@
 
 phina.globalize();
 
+var GAME_TITLE = '迫真ガノフ部\n〜春日エリアの裏技〜';
+
 var SHARE_URL = 'http://iciclize.net:8080';  
 var SHARE_MESSAGE = '※音量注意';  
 var SHARE_HASH_TAGS = '春日ビーフストロガノフ,春日ビーフ,雙峰祭,筑波大学,雙峰祭';
@@ -29,6 +31,7 @@ var TYPE_BEEF  = 5;
 var PROB_BOMB  = 50;
 var PROB_BEEF  = 40;
 var PROB_BREAD = 10;
+
 
 
 var ASSETS = {
