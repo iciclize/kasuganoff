@@ -46,16 +46,25 @@ var ASSETS = {
 
 phina.main(function() {  
   var app = GameApp({
-    title: 'Breakout',
-    startLabel: location.search.substr(1).toObject().scene || 'title',
+    title: GAME_TITLE,
+    startLabel: 'Title',
     width: SCREEN_WIDTH,
     height: SCREEN_HEIGHT,
-    assets: ASSETS
+    assets: ASSETS,
+    scenes: [{
+        className: 'TitleScene',
+        label: 'Title',
+        nextLabel: 'Main'
+      },
+      {
+        className: 'MainScene',
+        label: 'Main',
+        nextLabel: 'Title'
+      }
+    ]
   });
 
   app.fps = 30;
-
   app.enableStats();
-
   app.run();
 });
