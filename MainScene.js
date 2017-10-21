@@ -57,6 +57,8 @@ phina.define("MainScene", {
     if (pointer.getPointingEnd()) {
       if (this.flag) return;
       let input = Vector2(pointer.fx, pointer.fy);
+      Stat.v = input.length() * 1.2;
+      Stat.a = input.toDegree();
       this.ganoff.setVector(input);
       this.flag = true;
     }

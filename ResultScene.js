@@ -34,6 +34,13 @@ phina.define('ResultScene', {
   
   init: function(params) {
     this.superInit(params);
+
+    Stat.score = params.score;
+
+    var req = new XMLHttpRequest();
+    req.open('GET', 'stat.php?v=' + Stat.v + '&a=' + Stat.a + '&score=' + Stat.score, true);
+    req.send(null);
+
     if (!docCookies.getItem('highscore')) docCookies.setItem('highscore', 0);
     var self = this;
     var isHighScore = ResultScene.isHighScore(params.score);
@@ -84,7 +91,7 @@ phina.define('ResultScene', {
       align: 'center'
     }).addChildTo(this);
     LabelArea({
-      text: '大学会館前でビーフストロガノフ販売中！\nツイートしてね！',
+      text: '松美池前でビーフストロガノフ販売中！\nツイートしてね！',
       fontSize: 42,
       x: this.gridX.center(),
       y: 620,
