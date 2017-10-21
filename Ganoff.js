@@ -49,4 +49,5 @@ phina.define('Ganoff', {
       return .003 * speed + .01;
     }
   }
+
 });

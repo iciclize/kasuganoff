@@ -1,3 +1,10 @@
+var PARTICLE_HUE_RANGE_BEGIN  = 0;
+var PARTICLE_HUE_RANGE_END    = 30;
+var PARTICLE_VELOCITY_RANGE   = 14;
+var PARTICLE_RADIUS           = 7;
+var PARTICLE_NOIZE_RANGE      = 12;
+var PARTICLE_NUM = 5;
+
 phina.define('ExplosionManager', {
   init: function(display) {
     this.explosions = [];
@@ -17,7 +24,6 @@ phina.define('ExplosionManager', {
 
 });
 
-var PARTICLE_NUM = 5;
 phina.define('Explosion', {
 
   init: function(x, y, display) {
@@ -43,12 +49,6 @@ phina.define('Explosion', {
   }
 
 });
-
-var PARTICLE_HUE_RANGE_BEGIN  = 0;
-var PARTICLE_HUE_RANGE_END    = 30;
-var PARTICLE_VELOCITY_RANGE   = 14;
-var PARTICLE_RADIUS           = 7;
-var PARTICLE_NOIZE_RANGE      = 12;
 
 phina.define('Particle', {  
   superClass: 'CircleShape',
