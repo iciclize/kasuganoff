@@ -5759,8 +5759,9 @@ phina.namespace(function() {
       defaults: {
         maxCacheNum: 3,
         minDistance: 10,
-        minDistance: 0, /* オーバーライド！！！ */
         maxDistance: 100,
+        minDistance: 0,
+        maxDistance: 300/* オーバーライド！！！ */
       },
     },
   });
