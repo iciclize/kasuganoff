@@ -26,7 +26,7 @@ phina.define("MainScene", {
 
     this.score = 0;
 
-    this.flag = false;
+    this.flag = false; // 1度しかフリック判定をしない
   },
 
   update: function(app) {
@@ -61,14 +61,17 @@ phina.define("MainScene", {
       this.flag = true;
     }
 
+    var self = this;
     if (this.flag)
-      if (this.ganoff.speed <= 0) this.gameover();
+      if (this.ganoff.speed <= 0) setTimeout(function() {
+        self.gameover();
+      }, 1000);
 
   },
   bomb: function() {
+    SoundManager.play('exp');
     this.gameObjects.children.each(function(obj) {
       if (obj.type == TYPE_BIKE) {
-        SoundManager.play('exp');
         this.explosionManager.fire(obj.x, obj.y);
         this.objectManager.hit(obj);
         this.score += 1;
@@ -80,18 +83,18 @@ phina.define("MainScene", {
     /* 随分乱暴な書き方をしてるけど動くからま、多少はね？ */
     this._bigNum++;
     if (this._bigNum > 1) return;
-    var o = { width: this.ganoff.width, height: this.ganoff.height };
     var self = this;
     this.ganoff.tweener
-      .to({ width: o.width * 3, height: o.height * 3 }, 300)
+      .to({ width: GANOFF_WIDTH * 3, height: GANOFF_HEIGHT * 3 }, 300)
       .wait(4000)
       .call(check).play();
     function check() {
       self._bigNum--;
       if (self._bigNum > 0)
         self.ganoff.tweener.wait(4000).call(check).play();
-      else
-        self.ganoff.tweener.to({ width: o.width, height: o.height }, 300).play();
+      else {
+        self.ganoff.tweener.to({ width: GANOFF_WIDTH, height: GANOFF_HEIGHT }, 300).play();
+      }
     }
   },
   _fastNum: 0,
@@ -109,7 +112,7 @@ phina.define("MainScene", {
       if (self._fastNum > 0) {
         self.ganoff.tweener2.wait(4000).call(check).play();
       } else {
-        self.ganoff.speed = o.speed;
+        self.ganoff.speed = o.speed + 10;
         self.ganoff.deceleration = o.deceleration;
       }
     }
@@ -117,7 +120,7 @@ phina.define("MainScene", {
 
   gameover: function() {
     this.exit({
-      score: this.score + '点',
+      score: this.score,
       message: SHARE_MESSAGE,
       url: SHARE_URL,
       hashtags: SHARE_HASH_TAGS

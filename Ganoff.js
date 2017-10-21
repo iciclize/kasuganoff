@@ -2,8 +2,8 @@ phina.define('Ganoff', {
   superClass: 'Sprite',
   init: function() {
     this.superInit('ganoff', 500, 500);
-    this.width = 496 * .17;
-    this.height = 254 * .17;
+    this.width = GANOFF_WIDTH;
+    this.height =GANOFF_HEIGHT;
     this.setPosition(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2);
     this.speed = 0;
     this.deceleration = Ganoff.brakeFn;

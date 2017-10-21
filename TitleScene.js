@@ -55,5 +55,22 @@ phina.define('HowToPlayScene', {
   superClass: 'DisplayScene',
   init: function() {
     this.superInit({ width: SCREEN_WIDTH, height: SCREEN_HEIGHT });
+    Sprite('howtoplay', 514, 893).setPosition(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2).addChildTo(this);
+    var self = this;
+    Button({
+      x: this.gridX.center(),
+      y: 840,
+      width: 470,
+      height: 70,
+      text: "OK",
+      fontSize: 36,
+      fontColor: 'white',
+      cornerRadius: 8,
+      fill: 'hsla(30, 60%, 50%, .9)',
+    }).addChildTo(this)
+    .on('pointend', function() {
+      self.exit();
+    });
+
   }
 });
