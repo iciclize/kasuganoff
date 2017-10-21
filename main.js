@@ -40,7 +40,8 @@ var ASSETS = {
     'bike': './assets/bike.png',
     'beef': './assets/beef.png',
     'bread': './assets/bread.png',
-    'bomb': './assets/bomb.png'
+    'bomb': './assets/bomb.png',
+    'kasubike': './assets/kasubike.jpg'
   },
   sound: {
     'exp': './assets/explosion.mp3'
