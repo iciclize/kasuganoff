@@ -2,8 +2,9 @@ phina.globalize();
 
 var GAME_TITLE = '迫真ガノフ部\n〜春日エリアの裏技〜';
 
+// わりとすぐ140文字いっちゃう
 var SHARE_URL = 'http://iciclize.net:8080';  
-var SHARE_MESSAGE = '大学会館前にてアツアツの春日ビーフストロガノフを販売中！\n春日ビーフストロガノフゲーム(仮称)をプレイ！';  
+var SHARE_MESSAGE = '大学会館前にてビーフストロガノフ販売中！\n春日ガノフゲーム(仮称)をプレイ！';  
 var SHARE_HASH_TAGS = '春日ビーフ2017,筑波大学,雙峰祭';
 
 var SCREEN_WIDTH    = 514;  
@@ -72,4 +73,19 @@ phina.main(function() {
   app.fps = 30;
   app.enableStats();
   app.run();
+
+  // iOSで音を鳴らすためのコード - https://qiita.com/simiraaaa/items/ba83ce70cb091e8bdfab
+  var locked = true;
+  var f = function(e){
+    if(locked){
+      var s = phina.asset.Sound();
+      s.loadFromBuffer();
+      s.play();
+      s.volume=0;
+      s.stop();
+      locked=false;
+      app.domElement.removeEventListener('touchend', f);
+    }
+  };
+  app.domElement.addEventListener('touchend',f);
 });

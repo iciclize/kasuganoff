@@ -1,6 +1,32 @@
 var AWARDS = [
-  ['称号名', 0],
-  ['', 100]
+  [0, 'カス'],
+  [50, 'ガノフの端くれ'],
+  [100, 'かろうじてガノフだったもの'],
+  [150, 'ガノフ見習い'],
+  [200, 'ビーフストロガノフのクズ'],
+  [300, 'ガノフ星人'],
+  [400, 'ガノフに選ばれし者'],
+  [500, 'ガノフバンザイ！'],
+  [600, 'ガノフ大爆発'],
+  [700, 'ガノフマスター'],
+  [810, 'ビーフストロガノフ先輩'],
+  [932, 'ビーフストロガノフの鑑'],
+  [999, 'ビーフストロガノフまみれ'],
+  [1144, 'やったぜ。'],
+  [1200, 'イキスギストロガノフ'],
+  [1300, '僕は今日、昨日のガノフとビーフする'],
+  [1400, '君のガノフを食べたい'],
+  [1500, '打ち上げガノフ、パンから食べるか？器から食べるか？'],
+  [1550, 'ガノフ・フォール'],
+  [1600, 'ガノフの惑星'],
+  [1650, '親の顔より見たガノフ'],
+  [1700, '黒塗りのガノフ'],
+  [1750, 'ガノフと化した先輩'],
+  [1800, 'ガノフ地獄'],
+  [1850, 'ビーフストロガノフこわれる'],
+  [1919, '二人は幸せなビーフストロガノフを食べて終了'],
+  [2001, '2017年ビーフストロガノフの度'],
+  [2050, 'ビーフストロガノフ感じるんでしたよね？']
 ];
 
 phina.define('ResultScene', {
@@ -11,7 +37,7 @@ phina.define('ResultScene', {
     if (!docCookies.getItem('highscore')) docCookies.setItem('highscore', 0);
     var self = this;
     var isHighScore = ResultScene.isHighScore(params.score);
-    var award = 'こ↑こ↓ に称号を返す関数を入れるゾ＾〜';
+    var award = ResultScene.getAward(params.score);
     this.backgroundColor = 'hsl(30, 60%, 100%)';
     Label({
       text: 'Score',
@@ -54,7 +80,8 @@ phina.define('ResultScene', {
       x: this.gridX.center(),
       y: 520,
       width: 400,
-      fill: 'black'
+      fill: 'black',
+      align: 'center'
     }).addChildTo(this);
     LabelArea({
       text: '大学会館前でビーフストロガノフ販売中！\nツイートしてね！',
@@ -106,6 +133,14 @@ phina.define('ResultScene', {
     },
     setNewHighScore: function(score) {
       docCookies.setItem('highscore', score);
+    },
+    getAward: function(score) {
+      for (var i = AWARDS.length - 1; i >= 0; --i) {
+        var rangeBegin = AWARDS[i][0];
+        var award = AWARDS[i][1];
+        if (score >= rangeBegin) return award;
+      }
+      return 'おや？';
     }
   }
 });

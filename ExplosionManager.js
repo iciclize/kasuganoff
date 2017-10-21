@@ -3,7 +3,7 @@ var PARTICLE_HUE_RANGE_END    = 30;
 var PARTICLE_VELOCITY_RANGE   = 14;
 var PARTICLE_RADIUS           = 7;
 var PARTICLE_NOIZE_RANGE      = 12;
-var PARTICLE_NUM = 5;
+var PARTICLE_NUM = 4;
 
 phina.define('ExplosionManager', {
   init: function(display) {
