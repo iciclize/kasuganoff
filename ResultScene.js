@@ -91,7 +91,7 @@ phina.define('ResultScene', {
       align: 'center'
     }).addChildTo(this);
     LabelArea({
-      text: '松美池前でビーフストロガノフ販売中！\nツイートしてね！',
+      text: '松美池前でビーフストロガノフ販売します！\nツイートしてね！',
       fontSize: 42,
       x: this.gridX.center(),
       y: 620,

@@ -43,7 +43,8 @@ const ASSETS = {
     'howtoplay': './assets/howtoplay.png'
   },
   sound: {
-    'exp': './assets/explosion.mp3'
+    'exp': './assets/explosion.mp3',
+    'unch': './assets/unchi-kong.mp3'
   }
 };
 
