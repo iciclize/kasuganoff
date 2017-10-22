@@ -49,9 +49,9 @@ phina.define('ObjectManager', {
           var p = Math.random() * 10000;
           if (p <= PROB_BOMB) {
             return this.arrange(Bomb(), i);
-          } else if (p <= PROB_BREAD + PROB_BOMB) {
-            return this.arrange(Bread(), i);
-          } else if (p <= PROB_BEEF + PROB_BOMB + PROB_BREAD) {
+          } else if (p <= PROB_ONION+ PROB_BOMB) {
+            return this.arrange(Onion(), i);
+          } else if (p <= PROB_BEEF + PROB_BOMB + PROB_ONION) {
             return this.arrange(Beef(), i);
           } else {
               return this.arrange(Bike(), i);
@@ -59,7 +59,7 @@ phina.define('ObjectManager', {
           break;
 
         case TYPE_BEEF:
-        case TYPE_BREAD:
+        case TYPE_ONION:
         case TYPE_BOMB:
           if (obj.touched) {
             obj.remove();

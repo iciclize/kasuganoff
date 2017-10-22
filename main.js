@@ -24,12 +24,12 @@ var TYPE_INIT  = 0;
 var TYPE_BLANK = 1;
 var TYPE_BIKE  = 2;
 var TYPE_BOMB  = 3;
-var TYPE_BREAD = 4;
+var TYPE_ONION= 4;
 var TYPE_BEEF  = 5;
 
 var PROB_BOMB  = 50;
 var PROB_BEEF  = 40;
-var PROB_BREAD = 10;
+var PROB_ONION = 10;
 
 
 const ASSETS = {
@@ -37,7 +37,7 @@ const ASSETS = {
     'ganoff': './assets/ganoff.png',
     'bike': './assets/bike.png',
     'beef': './assets/beef.png',
-    'bread': './assets/bread.png',
+    'onion': './assets/onion.png',
     'bomb': './assets/bomb.png',
     'kasubike': './assets/kasubike.jpg',
     'howtoplay': './assets/howtoplay.png'
