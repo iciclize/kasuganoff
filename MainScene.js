@@ -114,7 +114,7 @@ phina.define("MainScene", {
       if (self._fastNum > 0) {
         self.ganoff.tweener2.wait(4000).call(check).play();
       } else {
-        self.ganoff.speed = o.speed + 10;
+        self.ganoff.speed = o.speed + 3;
         self.ganoff.deceleration = o.deceleration;
       }
     }
