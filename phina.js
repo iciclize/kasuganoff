@@ -5761,7 +5761,7 @@ phina.namespace(function() {
         minDistance: 10,
         maxDistance: 100,
         minDistance: 0,
-        maxDistance: 300/* オーバーライド！！！ */
+        maxDistance: 200/* オーバーライド！！！ */
       },
     },
   });
