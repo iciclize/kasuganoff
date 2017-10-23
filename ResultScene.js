@@ -50,7 +50,7 @@ phina.define('ResultScene', {
       text: 'Score',
       fontSize: 36,
       x: this.gridX.center(),
-      y: 80,
+      y: 100,
       fill: 'black'
     }).addChildTo(this);
 
@@ -60,7 +60,7 @@ phina.define('ResultScene', {
       text: '新記録！',
       fontSize: 24,
       x: this.gridX.center(),
-      y: 128,
+      y: 138,
       fill: 'red'
     }).addChildTo(this);
     ResultScene.setNewHighScore(params.score);
@@ -78,7 +78,7 @@ phina.define('ResultScene', {
       text: '称号',
       fontSize: 36,
       x: this.gridX.center(),
-      y: 290,
+      y: 310,
       fill: 'black'
     }).addChildTo(this);
     LabelArea({
@@ -94,7 +94,7 @@ phina.define('ResultScene', {
       text: '松美池前でビーフストロガノフ販売します！\nツイートしてね！',
       fontSize: 42,
       x: this.gridX.center(),
-      y: 620,
+      y: 650,
       width: 480,
       fill: 'black'
     }).addChildTo(this);

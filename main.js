@@ -44,7 +44,7 @@ const ASSETS = {
   },
   sound: {
     'exp': './assets/explosion.mp3',
-    'unch': './assets/unchi-kong.mp3'
+    'dddn': './assets/dddn.mp3'
   }
 };
 
