@@ -1,7 +1,5 @@
 phina.globalize();
 
-var Stat = { v: null, a: null, score: null };
-
 var GAME_TITLE = '迫真ガノフ部\n〜春日エリアの裏技〜';
 
 // わりとすぐ140文字いっちゃう
