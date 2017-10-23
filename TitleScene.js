@@ -19,9 +19,23 @@ phina.define("TitleScene", {
     }).addChildTo(this).setPosition(this.gridX.center(), this.gridY.span(6));
   },
   onenter: function(app) {
+    var twitter = Button({
+      x: this.gridX.center(),
+      y: 630,
+      width: 470,
+      height: 70,
+      text: '春日ビーフストロガノフTwitter',
+      fontSize: 28,
+      fontColor: 'white',
+      cornerRadius: 8,
+      fill: 'rgba(85, 172, 238, .9)'
+    }).addChildTo(this)
+    .onclick = function() {
+      window.open('https://twitter.com/beefstr_kasuga');
+    };
     var howtoplay = Button({
       x: this.gridX.center(),
-      y: this.gridY.span(12) - 40,
+      y: 720,
       width: 470,
       height: 70,
       text: "あそびかた - How to Play",
@@ -35,7 +49,7 @@ phina.define("TitleScene", {
     var self = this;
     var start = Button({
       x: this.gridX.center(),
-      y: this.gridY.span(13) - 10,
+      y: 810,
       width: 470,
       height: 70,
       text: "スタート - Start",
@@ -47,6 +61,7 @@ phina.define("TitleScene", {
     .on('pointend', function() {
       self.exit();
     });
+    
 
   }
 });

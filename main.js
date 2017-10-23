@@ -5,8 +5,8 @@ var Stat = { v: null, a: null, score: null };
 var GAME_TITLE = '迫真ガノフ部\n〜春日エリアの裏技〜';
 
 // わりとすぐ140文字いっちゃう
-var SHARE_URL = 'http://iciclize.net:8080';  
-var SHARE_MESSAGE = '松美池前にてビーフストロガノフ販売中！\n春日ガノフゲーム(仮称)をプレイしよう！';  
+var SHARE_URL = 'http://kasuganoff.tsukuba.io';  
+var SHARE_MESSAGE = '松美池前にてビーフストロガノフ販売中！\n「迫真ガノフ部」をプレイしよう！';  
 var SHARE_HASH_TAGS = '春日ビーフ2017,筑波大学,雙峰祭';
 
 var SCREEN_WIDTH    = 514;  
@@ -68,7 +68,7 @@ phina.main(function() {
       {
         className: 'ResultScene',
         label: 'Result',
-        nextLabel: 'Main'
+        nextLabel: 'Title'
       }
     ]
   });
