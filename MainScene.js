@@ -34,6 +34,9 @@ phina.define("MainScene", {
     
     this.gameObjects.children.each(function(obj) {
       if (obj.touched) {
+        if (obj.type == TYPE_BEEF || obj.type == TYPE_ONION || obj.type == TYPE_BOMB)
+          SoundManager.play('unch');
+
         if (obj.type == TYPE_BEEF) this.big();
         else if (obj.type == TYPE_ONION) this.fast();
         else if (obj.type == TYPE_BOMB) this.bomb();
