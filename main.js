@@ -4,7 +4,7 @@ var GAME_TITLE = '迫真ガノフ部\n〜春日エリアの裏技〜';
 
 // わりとすぐ140文字いっちゃう
 var SHARE_URL = 'http://kasuganoff.tsukuba.io';  
-var SHARE_MESSAGE = '松美池前にてビーフストロガノフ販売中！\n「迫真ガノフ部」をプレイしよう！';  
+var SHARE_MESSAGE = '今年は松美池前にてビーフストロガノフ販売！\n「迫真ガノフ部」をプレイしよう！';  
 var SHARE_HASH_TAGS = 'ganoff2017,雙峰祭';
 
 var SCREEN_WIDTH    = 514;  
