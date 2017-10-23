@@ -61,7 +61,7 @@ phina.define('ResultScene', {
     Stat.score = params.score;
 
     var req = new XMLHttpRequest();
-    req.open('GET', 'stat.php?v=' + Stat.v + '&a=' + Stat.a + '&score=' + Stat.score, true);
+    req.open('GET', 'stat.php?s=' + Stat.score, true);
     req.send(null);
 
     if (!docCookies.getItem('highscore')) docCookies.setItem('highscore', 0);
