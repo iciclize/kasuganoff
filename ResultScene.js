@@ -58,12 +58,6 @@ phina.define('ResultScene', {
   init: function(params) {
     this.superInit(params);
 
-    Stat.score = params.score;
-
-    var req = new XMLHttpRequest();
-    req.open('GET', 'stat.php?s=' + Stat.score, true);
-    req.send(null);
-
     if (!docCookies.getItem('highscore')) docCookies.setItem('highscore', 0);
     var self = this;
     var isHighScore = ResultScene.isHighScore(params.score);
