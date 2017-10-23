@@ -34,8 +34,11 @@ phina.define("MainScene", {
     
     this.gameObjects.children.each(function(obj) {
       if (obj.touched) {
+        if (obj.type == TYPE_BEEF || obj.type == TYPE_ONION || obj.type == TYPE_BOMB)
+          SoundManager.play('dddn');
+
         if (obj.type == TYPE_BEEF) this.big();
-        else if (obj.type == TYPE_BREAD) this.fast();
+        else if (obj.type == TYPE_ONION) this.fast();
         else if (obj.type == TYPE_BOMB) this.bomb();
       }
     }, this);
@@ -114,7 +117,7 @@ phina.define("MainScene", {
       if (self._fastNum > 0) {
         self.ganoff.tweener2.wait(4000).call(check).play();
       } else {
-        self.ganoff.speed = o.speed + 10;
+        self.ganoff.speed = o.speed + 3;
         self.ganoff.deceleration = o.deceleration;
       }
     }

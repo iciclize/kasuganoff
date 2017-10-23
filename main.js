@@ -5,9 +5,9 @@ var Stat = { v: null, a: null, score: null };
 var GAME_TITLE = '迫真ガノフ部\n〜春日エリアの裏技〜';
 
 // わりとすぐ140文字いっちゃう
-var SHARE_URL = 'http://iciclize.net:8080';  
-var SHARE_MESSAGE = '松美池前にてビーフストロガノフ販売中！\n春日ガノフゲーム(仮称)をプレイしよう！';  
-var SHARE_HASH_TAGS = '春日ビーフ2017,筑波大学,雙峰祭';
+var SHARE_URL = 'http://kasuganoff.tsukuba.io';  
+var SHARE_MESSAGE = '松美池前にてビーフストロガノフ販売中！\n「迫真ガノフ部」をプレイしよう！';  
+var SHARE_HASH_TAGS = 'ganoff2017,雙峰祭';
 
 var SCREEN_WIDTH    = 514;  
 var SCREEN_HEIGHT   = 893;  
@@ -24,12 +24,12 @@ var TYPE_INIT  = 0;
 var TYPE_BLANK = 1;
 var TYPE_BIKE  = 2;
 var TYPE_BOMB  = 3;
-var TYPE_BREAD = 4;
+var TYPE_ONION= 4;
 var TYPE_BEEF  = 5;
 
 var PROB_BOMB  = 50;
 var PROB_BEEF  = 40;
-var PROB_BREAD = 10;
+var PROB_ONION = 10;
 
 
 const ASSETS = {
@@ -37,13 +37,14 @@ const ASSETS = {
     'ganoff': './assets/ganoff.png',
     'bike': './assets/bike.png',
     'beef': './assets/beef.png',
-    'bread': './assets/bread.png',
+    'onion': './assets/onion.png',
     'bomb': './assets/bomb.png',
     'kasubike': './assets/kasubike.jpg',
     'howtoplay': './assets/howtoplay.png'
   },
   sound: {
-    'exp': './assets/explosion.mp3'
+    'exp': './assets/explosion.mp3',
+    'dddn': './assets/dddn.mp3'
   }
 };
 
@@ -67,13 +68,13 @@ phina.main(function() {
       {
         className: 'ResultScene',
         label: 'Result',
-        nextLabel: 'Main'
+        nextLabel: 'Title'
       }
     ]
   });
 
   app.fps = 30;
-  app.enableStats();
+//  app.enableStats();
   app.run();
 
   // iOSで音を鳴らすためのコード - https://qiita.com/simiraaaa/items/ba83ce70cb091e8bdfab

@@ -46,7 +46,7 @@ phina.define('Ganoff', {
   }, 
   _static: {
     brakeFn: function(speed) {
-      return .003 * speed + .01;
+      return .005 * speed + .01;
     }
   }
 
