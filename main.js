@@ -74,7 +74,7 @@ phina.main(function() {
   });
 
   app.fps = 30;
-  app.enableStats();
+//  app.enableStats();
   app.run();
 
   // iOSで音を鳴らすためのコード - https://qiita.com/simiraaaa/items/ba83ce70cb091e8bdfab
